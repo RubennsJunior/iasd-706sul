@@ -77,4 +77,12 @@ describe('editor de permissões com perfil antigo', () => {
     const editavel = renderToString(<PermissionMatrixEditor value={antigo as PermissionMatrix} onChange={() => undefined} />)
     expect(editavel).toContain('Visualizar — Patrimônio')
   })
+
+  it('só tem as caixas de cada ação: sem botões "Marcar" / "Limpar" nem coluna "Tudo"', () => {
+    const html = renderToString(<PermissionMatrixEditor value={buildMatrix({ eventos: ['view'] })} onChange={() => undefined} />)
+    expect(html).not.toMatch(/Marcar|Limpar|>Tudo</)
+    expect(html).not.toContain('<button')
+    // uma caixa por módulo e por ação (5 ações)
+    expect((html.match(/type="checkbox"/g) ?? []).length).toBe(17 * 5)
+  })
 })

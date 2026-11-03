@@ -27,18 +27,13 @@ export function updatePermission(
   return { ...matrix, [module]: next }
 }
 
-// Largura das colunas no computador: módulo + uma coluna por ação (+ "Tudo" quando dá para editar)
-const COLUMNS_EDIT = 'md:grid-cols-[minmax(9rem,1.6fr)_repeat(5,minmax(4rem,1fr))_4.5rem]'
-const COLUMNS_VIEW = 'md:grid-cols-[minmax(9rem,1.6fr)_repeat(5,minmax(4rem,1fr))]'
+// Largura das colunas no computador: módulo + uma coluna por ação
+const COLUMNS = 'md:grid-cols-[minmax(9rem,1.6fr)_repeat(5,minmax(4rem,1fr))]'
 
 export function PermissionMatrixEditor({ value: stored, onChange, readOnly }: Props) {
   // matrizes gravadas antes de um módulo existir não têm a entrada dele: o que falta aparece sem permissão
   const value = normalizeMatrix(stored)
-  const columns = readOnly ? COLUMNS_VIEW : COLUMNS_EDIT
-  const toggleRow = (module: ModuleKey) => {
-    const all = ACTIONS.every((a) => value[module][a])
-    onChange?.({ ...value, [module]: permissionSet(...(all ? [] : ACTIONS)) })
-  }
+  const columns = COLUMNS
 
   // No celular cada módulo vira um bloco com as ações lado a lado (nada fica fora da tela); do tamanho "md" em diante
   // as mesmas linhas formam a tabela de colunas.
@@ -56,7 +51,6 @@ export function PermissionMatrixEditor({ value: stored, onChange, readOnly }: Pr
             {ACTION_LABELS[action]}
           </span>
         ))}
-        {!readOnly && <span className="text-center">Tudo</span>}
       </div>
       <div className="divide-y divide-line">
         {MODULES.map((module) => (
@@ -90,15 +84,6 @@ export function PermissionMatrixEditor({ value: stored, onChange, readOnly }: Pr
                   </label>
                 )
               })}
-              {!readOnly && (
-                <button
-                  type="button"
-                  onClick={() => toggleRow(module)}
-                  className="rounded-full px-2.5 py-0.5 text-xs font-semibold text-royal-600 hover:bg-royal-50 md:justify-self-center"
-                >
-                  {ACTIONS.every((a) => value[module][a]) ? 'Limpar' : 'Marcar'}
-                </button>
-              )}
             </div>
           </div>
         ))}
