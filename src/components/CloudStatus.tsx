@@ -1,8 +1,6 @@
 import { useEffect } from 'react'
 import { CloudOff } from 'lucide-react'
-import { BOOTSTRAP_ADMIN_EMAIL } from '../config'
 import { useAuth } from '../contexts/AuthContext'
-import { cloudEnabled } from '../lib/firebase'
 import { useToast } from '../contexts/ToastContext'
 import { useCloudStatus } from '../lib/cloudStatus'
 import type { CloudState } from '../lib/cloudStatus'
@@ -44,18 +42,6 @@ export function CloudBanner() {
           Tentar novamente
         </button>
       </p>
-    </div>
-  )
-}
-
-/** O administrador de partida entra com uma senha combinada às pressas: avisa até ele trocá-la. */
-export function DefaultPasswordNotice() {
-  const { user } = useAuth()
-  if (!cloudEnabled || !user || user.email.toLowerCase() !== BOOTSTRAP_ADMIN_EMAIL.toLowerCase() || user.passwordChangedAt) return null
-  return (
-    <div role="status" className="bg-amber-50 px-4 py-2.5 text-xs text-amber-900">
-      <strong className="font-semibold">Segurança.</strong> Troque a senha do administrador: toque no seu avatar, em “Minha conta”, e use
-      “Alterar minha senha”.
     </div>
   )
 }

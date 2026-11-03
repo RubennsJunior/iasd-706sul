@@ -1,5 +1,5 @@
 import { BrowserRouter } from 'react-router-dom'
-import { CloudBanner, CloudNotices, DefaultPasswordNotice } from './components/CloudStatus'
+import { CloudBanner, CloudNotices } from './components/CloudStatus'
 import { NativeBackButton } from './components/NativeBackButton'
 import { Splash } from './components/Splash'
 import { AuthProvider } from './contexts/AuthContext'
@@ -16,7 +16,6 @@ export default function App() {
         <AuthProvider>
           <ConfirmProvider>
             <CloudBanner />
-            <DefaultPasswordNotice />
             <Splash>
               <AppRoutes />
             </Splash>

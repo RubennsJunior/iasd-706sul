@@ -112,8 +112,8 @@ Os dados ficam no **Firestore** do projeto `erp-igrejaadventista`, em `igrejas/i
 - **Primeiro administrador:** a conta `admin@admin.com` (criada no Firebase Authentication) ganha o perfil de
   administrador ao entrar pela primeira vez; ao entrar, o administrador também grava os dados de exemplo (se a igreja
   ainda não tem nenhum) e acerta o diretório público de nomes. As contas de demonstração antigas (`@igreja.demo`) não
-  funcionam na nuvem: exclua-as em *Usuários*. **Troque a senha da conta de administrador** em *Minha conta* (um aviso
-  fica na tela até isso). Para usar outro e-mail, mude-o em `firestore.rules` e em `VITE_ADMIN_EMAIL`.
+  funcionam na nuvem: exclua-as em *Usuários*. **Troque a senha da conta de administrador** em *Minha conta*. Para
+  usar outro e-mail, mude-o em `firestore.rules` e em `VITE_ADMIN_EMAIL`.
 - **Diretório de nomes:** a coleção `directory` guarda só o nome de cada membro (mesmo código). É o que o visitante e os
   perfis sem acesso a *Membros* usam para ver quem está nas escalas, sem expor telefone, e-mail ou endereço.
 - **Analytics:** ligado só no site publicado (não no desenvolvimento nem no APK).
