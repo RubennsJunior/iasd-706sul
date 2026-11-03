@@ -105,9 +105,8 @@ Os dados ficam no **Firestore** do projeto `erp-igrejaadventista`, em `igrejas/i
   são enviadas quando a conexão volta.
 - **Primeira execução:** se a igreja ainda não tem dados na nuvem, o sistema cria só o necessário para funcionar
   (perfis de acesso, identidade e configurações da igreja). Membros, equipes, agenda e liturgia começam vazios: a
-  igreja cadastra os dados reais, sem exemplos fictícios. Em *Configurações do Aplicativo* dá para restaurar os
-  dados de exemplo, importar/exportar um backup ou **limpar todos os dados** (mantém usuários, perfis e
-  configurações; exige conexão).
+  igreja cadastra os dados reais, sem exemplos fictícios. Em *Configurações do Aplicativo* dá para importar/exportar
+  um backup ou **limpar todos os dados** (mantém usuários, perfis e configurações; exige conexão).
 - **Login:** Firebase Authentication (e-mail e senha). As senhas ficam no Firebase, nunca no Firestore. O perfil de cada
   pessoa é o documento `users/<uid>` (perfil de acesso, situação e permissões personalizadas); a sessão continua
   guardada no aparelho, inclusive sem internet. Cada pessoa troca a própria senha em *Minha conta* e, para as outras,

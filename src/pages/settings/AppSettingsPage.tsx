@@ -1,5 +1,5 @@
 import { useRef } from 'react'
-import { Database, Download, RotateCcw, SlidersHorizontal, Sparkles, Trash2, Upload } from 'lucide-react'
+import { Database, Download, SlidersHorizontal, Sparkles, Trash2, Upload } from 'lucide-react'
 import { Switch } from '../../components/forms/Controls'
 import { Button } from '../../components/ui/Button'
 import { Card, SectionHeader } from '../../components/ui/Card'
@@ -10,7 +10,7 @@ import { useSettings } from '../../hooks/useData'
 import { Page } from '../../layouts/PageMeta'
 import { CLOUD_LABEL, CloudStatusDot } from '../../components/CloudStatus'
 import { useCloudStatus } from '../../lib/cloudStatus'
-import { clearAllData, exportAllData, importAllData, resetAllData } from '../../repositories'
+import { clearAllData, exportAllData, importAllData } from '../../repositories'
 import { settingsService } from '../../services'
 import { todayISO } from '../../utils/date'
 import { downloadFile } from '../../utils/misc'
@@ -53,21 +53,6 @@ export function AppSettingsPage() {
     try {
       await importAllData(await file.text())
       toast.success('Backup importado com sucesso.')
-    } catch (error) {
-      toast.error(errorMessage(error))
-    }
-  }
-
-  const reset = async () => {
-    const ok = await confirm({
-      title: 'Restaurar dados fictícios?',
-      message: `Tudo o que foi cadastrado ${scope} será apagado e os dados de exemplo voltam ao início.`,
-      confirmLabel: 'Restaurar',
-    })
-    if (!ok) return
-    try {
-      await resetAllData()
-      toast.success('Dados de exemplo restaurados.')
     } catch (error) {
       toast.error(errorMessage(error))
     }
@@ -136,9 +121,6 @@ export function AppSettingsPage() {
                     if (file) void importBackup(file)
                   }}
                 />
-                <Button variant="danger" icon={RotateCcw} onClick={reset}>
-                  Restaurar dados fictícios
-                </Button>
                 <Button variant="danger" icon={Trash2} onClick={clear}>
                   Limpar todos os dados
                 </Button>
