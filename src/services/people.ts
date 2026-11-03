@@ -15,6 +15,7 @@ import { permissionSet } from '../models/permissions'
 import { repos } from '../repositories'
 import { isValidEmail, normalize, pluralize } from '../utils/misc'
 import { createCrudService } from './crud'
+import { assertScope, getScope } from './scope'
 import { PRIMARY_POSITION, enforceSinglePrimary, reconcileLeader, syncLeaderFromEntity } from './leadership'
 
 /** Quantos vínculos um membro possui (usado para avisar antes de excluir). */
@@ -241,6 +242,12 @@ export const departmentsService = createCrudService<Department>(repos.department
   label: 'Departamento',
   activityKind: 'departamento',
   nameOf: (d) => d.name,
+  authorize: (_action, item, existing) => {
+    if (!existing) return assertScope('department', item, { isNew: true })
+    assertScope('department', existing)
+    // quem só enxerga a(s) equipe(s) pode consultar o departamento dela, não alterá-lo
+    if (!getScope().all && getScope().reach !== 'departamento') throw new Error('Seu perfil só pode consultar departamentos.')
+  },
   async afterSave(department, previous) {
     if (department.leaderId !== previous?.leaderId) {
       await syncLeaderFromEntity('departamento', department.id, department.leaderId)
@@ -282,6 +289,10 @@ export const leadersService = createCrudService<LeaderAssignment>(repos.leaders,
   activityKind: 'lideranca',
   nameOf: () => 'registro',
   silent: true,
+  authorize: (action, item, existing) => {
+    if (existing) assertScope('leader', existing)
+    if (action !== 'remove') assertScope('leader', item, { isNew: !existing })
+  },
   async validate(data, existing) {
     const all = await repos.leaders.list()
     const duplicate = all.find(
@@ -314,6 +325,10 @@ export const teamsService = {
     feminine: true,
     activityKind: 'equipe',
     nameOf: (t) => t.name,
+    authorize: (_action, item, existing) => {
+      if (existing) assertScope('team', existing)
+      else assertScope('team', item, { isNew: true })
+    },
     async afterSave(team, previous) {
       if (team.leaderId && !team.memberIds.includes(team.leaderId)) {
         await repos.teams.update(team.id, { memberIds: [...team.memberIds, team.leaderId] })

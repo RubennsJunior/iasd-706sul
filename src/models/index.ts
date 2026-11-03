@@ -78,11 +78,18 @@ export interface DirectoryEntry extends Entity {
   fullName: string
 }
 
+/** Em quais dados as permissões do perfil valem: toda a igreja ou só o(s) departamento(s) / equipe(s) do usuário. */
+export type RoleReach = 'todos' | 'departamento' | 'equipe'
+
 export interface Role extends Entity {
   name: string
   description: string
   permissions: PermissionMatrix
   system?: boolean
+  /** Abrangência das permissões (padrão: toda a igreja). Perfis gravados antes deste campo valem para toda a igreja. */
+  reach?: RoleReach
+  /** Cargos e funções que contam para a abrangência; vazio = qualquer ligação com a equipe ou o departamento. */
+  reachPositionIds?: ID[]
 }
 
 /* Estrutura da igreja */

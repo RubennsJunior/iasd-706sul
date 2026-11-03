@@ -3,7 +3,7 @@ import type { ReactNode } from 'react'
 import { Pencil, Plus, SearchX, Trash2 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
-import type { Entity, ModuleKey, NewEntity } from '../../models'
+import type { ActionKey, Entity, ModuleKey, NewEntity } from '../../models'
 import type { CrudService } from '../../services'
 import { useAuth } from '../../contexts/AuthContext'
 import { useConfirm } from '../../contexts/ConfirmContext'
@@ -99,7 +99,10 @@ export function CrudPage<T extends Entity>({
   newLabel,
   cardPage = 20,
 }: CrudPageProps<T>) {
-  const { can } = useAuth()
+  const { can: allowed, inScope, scope } = useAuth()
+  // quem só enxerga equipes ou departamentos específicos consulta os departamentos dele, mas não os altera
+  const readOnlyScope = module === 'departamentos' && !scope.all && scope.reach !== 'departamento'
+  const can = (m: ModuleKey, action?: ActionKey) => allowed(m, action) && !(readOnlyScope && action && action !== 'view')
   const toast = useToast()
   const confirm = useConfirm()
   const navigate = useNavigate()
@@ -159,7 +162,7 @@ export function CrudPage<T extends Entity>({
 
   if (mode !== 'list') {
     if (!can(module, mode === 'new' ? 'create' : 'edit')) return <Navigate to={basePath} replace />
-    if (mode === 'edit' && !editing) return loading ? null : <Navigate to={basePath} replace />
+    if (mode === 'edit' && (!editing || !inScope(module, editing))) return loading ? null : <Navigate to={basePath} replace />
     if (formPage) return <Fragment key={editing?.id ?? 'new'}>{formPage({ item: editing, backTo: basePath })}</Fragment>
     return (
       <FormPage
@@ -178,6 +181,7 @@ export function CrudPage<T extends Entity>({
 
   const filtered = items.filter(
     (item) =>
+      inScope(module, item) &&
       matchesQuery(query, ...searchText(item)) &&
       filters.every((f) => !filterValues[f.key] || f.predicate(item, filterValues[f.key])),
   )

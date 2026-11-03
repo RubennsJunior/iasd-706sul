@@ -8,7 +8,7 @@ import { EmptyState, Fab, FilterMenu, SearchBar } from '../../components/ui/Misc
 import { SegmentedTabs } from '../../components/ui/Tabs'
 import { teamIcon } from '../../components/ui/icons'
 import { useAuth } from '../../contexts/AuthContext'
-import { useDepartments, useMemberNames, useTeams } from '../../hooks/useData'
+import { useDepartments, useMemberNames, useScopedTeams } from '../../hooks/useData'
 import { Page } from '../../layouts/PageMeta'
 import { ACTIVE_STATUS_OPTIONS } from '../../utils/labels'
 import { matchesQuery, pluralize } from '../../utils/misc'
@@ -16,8 +16,8 @@ import { matchesQuery, pluralize } from '../../utils/misc'
 type Tab = 'todas' | 'minhas' | 'lideranca' | 'nova'
 
 export function TeamsPage() {
-  const { can, member } = useAuth()
-  const { items: teams } = useTeams()
+  const { can, member, scope } = useAuth()
+  const { items: teams } = useScopedTeams()
   const { items: departments } = useDepartments()
   const { nameOf } = useMemberNames()
   const [tab, setTab] = useState<Tab>('todas')
@@ -25,7 +25,8 @@ export function TeamsPage() {
   const [filters, setFilters] = useState<Record<string, string>>({})
   const navigate = useNavigate()
 
-  const canCreate = can('equipes', 'create')
+  // equipe nova: quem vê a igreja toda, ou quem tem um departamento (dentro dele)
+  const canCreate = can('equipes', 'create') && (scope.all || scope.reach === 'departamento')
 
   const visible = useMemo(
     () =>

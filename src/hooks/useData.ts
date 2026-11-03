@@ -1,6 +1,7 @@
 import { useCallback, useMemo } from 'react'
 import type { Entity, ID, Member } from '../models'
 import { repos } from '../repositories'
+import { useAuth } from '../contexts/AuthContext'
 import { useCollection } from './useCollection'
 
 export const useMembers = () => useCollection(repos.members)
@@ -38,6 +39,22 @@ export function useById<T extends Entity>(items: T[]) {
 }
 
 export const useDirectory = () => useCollection(repos.directory)
+
+/** Equipes dentro da abrangência do perfil de quem está logado (todas, para quem vê a igreja toda). */
+export function useScopedTeams() {
+  const { inScope } = useAuth()
+  const result = useTeams()
+  const items = useMemo(() => result.items.filter((t) => inScope('equipes', t)), [result.items, inScope])
+  return { ...result, items }
+}
+
+/** Escalas das equipes dentro da abrangência do perfil. */
+export function useScopedRosters() {
+  const { inScope } = useAuth()
+  const result = useRosters()
+  const items = useMemo(() => result.items.filter((r) => inScope('escalas', r)), [result.items, inScope])
+  return { ...result, items }
+}
 
 /**
  * Atalho para exibir o nome de um membro a partir do código. Quem não pode abrir o cadastro de membros

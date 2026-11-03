@@ -26,6 +26,8 @@ export interface CrudOptions<T extends Entity> {
   afterRemove?(item: T): Promise<void> | void
   /** Não registra no feed de atividades recentes. */
   silent?: boolean
+  /** Trava de abrangência do perfil: lance Error (mensagem amigável) se quem está logado não alcança o item. */
+  authorize?(action: 'create' | 'update' | 'remove', item: Partial<T>, existing?: T): void
 }
 
 export function createCrudService<T extends Entity>(
@@ -45,6 +47,7 @@ export function createCrudService<T extends Entity>(
     list: () => repo.list(),
     get: (id) => repo.get(id),
     async create(data) {
+      options.authorize?.('create', data as Partial<T>)
       await options.validate?.(data)
       const created = await repo.create(data)
       await options.afterSave?.(created)
@@ -54,6 +57,7 @@ export function createCrudService<T extends Entity>(
     async update(id, patch) {
       const existing = await repo.get(id)
       if (!existing) throw new Error(`${label} não encontrad${suffix}.`)
+      options.authorize?.('update', { ...existing, ...patch }, existing)
       await options.validate?.({ ...existing, ...patch }, existing)
       const updated = await repo.update(id, patch)
       await options.afterSave?.(updated, existing)
@@ -63,6 +67,7 @@ export function createCrudService<T extends Entity>(
     async remove(id) {
       const existing = await repo.get(id)
       if (!existing) return
+      options.authorize?.('remove', existing, existing)
       await options.beforeRemove?.(existing)
       await repo.remove(id)
       await options.afterRemove?.(existing)

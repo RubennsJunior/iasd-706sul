@@ -47,5 +47,20 @@ export {
   settingsService,
 } from './system'
 export { pendingRequests, requestsService } from './requests'
+export {
+  ALL_SCOPE,
+  KIND_OF_MODULE,
+  REACH_OPTIONS,
+  SCOPED_MODULES,
+  assertScope,
+  getScope,
+  reachLabel,
+  resolveScope,
+  scopeAllows,
+  scopeChecker,
+  scopeAllowsNew,
+  setScope,
+} from './scope'
+export type { Scope, ScopeKind, Structure } from './scope'
 export type { MemberRequestInput } from './requests'
 export { PRIMARY_POSITION } from './leadership'

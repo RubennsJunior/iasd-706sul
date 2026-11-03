@@ -11,7 +11,7 @@ import { Select } from '../../components/forms/Select'
 import { useAuth } from '../../contexts/AuthContext'
 import { useConfirm } from '../../contexts/ConfirmContext'
 import { errorMessage, useToast } from '../../contexts/ToastContext'
-import { useDepartments, useLeaders, useMemberNames, usePositions, useRosters, useTeams } from '../../hooks/useData'
+import { useDepartments, useLeaders, useMemberNames, usePositions, useRosters, useScopedTeams } from '../../hooks/useData'
 import { Page } from '../../layouts/PageMeta'
 import { teamsService } from '../../services'
 import { formatDate, formatDateShort, formatTime, todayISO } from '../../utils/date'
@@ -23,7 +23,7 @@ export function TeamDetailPage() {
   const { can } = useAuth()
   const toast = useToast()
   const confirm = useConfirm()
-  const { items: teams, loading } = useTeams()
+  const { items: teams, loading } = useScopedTeams()
   const { items: departments } = useDepartments()
   const { items: leaders } = useLeaders()
   const { items: positions } = usePositions()

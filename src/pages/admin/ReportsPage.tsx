@@ -14,7 +14,7 @@ import { Button } from '../../components/ui/Button'
 import { Card, SectionHeader } from '../../components/ui/Card'
 import { ProgressBar } from '../../components/ui/Misc'
 import { useToast } from '../../contexts/ToastContext'
-import { useEvents, useMembers, useRosters, useTeams, useUsers, useWorshipServices, useMemberNames } from '../../hooks/useData'
+import { useEvents, useMembers, useScopedRosters, useScopedTeams, useUsers, useWorshipServices, useMemberNames } from '../../hooks/useData'
 import { Page } from '../../layouts/PageMeta'
 import { eventPhase } from '../../services'
 import { attendanceRate, eventsByPhase, membersByStatus, rosterResponses, teamsBySize, upcomingBirthdays } from '../../services/reports'
@@ -58,9 +58,9 @@ export function ReportsPage() {
   const toast = useToast()
   const { items: members } = useMembers()
   const { items: users } = useUsers()
-  const { items: teams } = useTeams()
+  const { items: teams } = useScopedTeams()
   const { items: events } = useEvents()
-  const { items: rosters } = useRosters()
+  const { items: rosters } = useScopedRosters()
   const { items: services } = useWorshipServices()
   const { nameOf } = useMemberNames()
   const today = todayISO()

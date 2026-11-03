@@ -74,6 +74,16 @@ dados fictícios. Para esconder a lista de contas e o "Testar outro perfil" (ant
   confirmação/recusa pelo próprio integrante e acompanhamento da liderança.
 - **Perfis e permissões** — seis perfis iniciais; cada um com matriz módulo × (visualizar, cadastrar, editar,
   excluir, gerenciar), editável pelo administrador. Menus, botões e rotas respeitam as permissões.
+- **Abrangência do perfil** — além de *o que* o perfil pode fazer, cada perfil define *em quais dados* vale:
+  **toda a igreja** (padrão), **só o(s) departamento(s) do usuário** ou **só a(s) equipe(s) do usuário**. É aqui que
+  **Departamentos, Equipes, Cargos e Funções e Líderes** passam a valer para o acesso: a pessoa (pelo membro vinculado ao
+  usuário) pertence às equipes em que é líder ou integrante e aos departamentos que lidera (e aos das suas equipes).
+  Opcionalmente o perfil escolhe **quais cargos e funções contam** (ex.: só "Líder" e "Coordenador"); vazio vale
+  qualquer ligação. A abrangência filtra Equipes, Escalas, Líderes, Departamentos e os totais da Home/Relatórios, e as
+  gravações desses módulos são recusadas fora dela. O Administrador Geral nunca é limitado. Os perfis *Líder de
+  Departamento* e *Líder de Equipe* dos dados de exemplo já vêm limitados; perfis já gravados continuam em "toda a
+  igreja" até alguém configurar a abrangência em **Perfis de Acesso**. A tela **Cargos e Funções** mostra em quais
+  perfis cada cargo define o acesso.
 
 ## Arquitetura
 
@@ -147,7 +157,9 @@ use `VITE_FIREBASE_EMULATOR=1` e `VITE_FIREBASE_PROJECT_ID=demo-igreja` (em `.en
 > **Limite conhecido:** gravações que o app faz em coleções de outros módulos como efeito de uma ação permitida (por exemplo,
 > aprovar um cadastro mexe em equipes) são liberadas por regras aproximadas, e um perfil com `escalas` pode alterar o campo
 > de integrantes de qualquer escala. Para uma igreja pequena é um bom ponto de partida; regras mais finas (por equipe ou
-> departamento) ficam para uma próxima etapa.
+> departamento) ficam para uma próxima etapa. A **abrangência do perfil** (departamento/equipe) é aplicada pelo aplicativo
+> (telas e serviços), não pelas regras do Firestore: quem tem permissão no módulo e acessa o banco por fora do app ainda
+> alcança dados de outras equipes.
 
 ### Trocar a origem dos dados
 

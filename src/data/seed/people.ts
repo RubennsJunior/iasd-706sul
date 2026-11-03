@@ -128,6 +128,8 @@ export function seedRoles(): Role[] {
       id: 'role-lider-depto',
       name: 'Líder de Departamento',
       description: 'Coordena as equipes e eventos do seu departamento.',
+      reach: 'departamento',
+      reachPositionIds: [],
       permissions: buildMatrix({
         eventos: ['view', 'create', 'edit'],
         equipes: ['view', 'create', 'edit'],
@@ -147,6 +149,8 @@ export function seedRoles(): Role[] {
       id: 'role-lider-equipe',
       name: 'Líder de Equipe',
       description: 'Monta as escalas e acompanha os integrantes da equipe.',
+      reach: 'equipe',
+      reachPositionIds: [],
       permissions: buildMatrix({
         eventos: ['view'],
         equipes: ['view', 'edit'],

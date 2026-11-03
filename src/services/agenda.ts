@@ -11,6 +11,7 @@ import { repos } from '../repositories'
 import { addDays, compareDateTime, diffInDays, monthKey, todayISO } from '../utils/date'
 import { matchesQuery } from '../utils/misc'
 import { createCrudService } from './crud'
+import { assertScope } from './scope'
 import { notify } from './system'
 
 /* Eventos */
@@ -148,6 +149,10 @@ export const rostersService = {
     feminine: true,
     activityKind: 'escala',
     nameOf: (r) => r.title,
+    authorize: (action, item, existing) => {
+      if (existing) assertScope('roster', existing)
+      if (action !== 'remove') assertScope('roster', item, { isNew: !existing })
+    },
     async validate(data, existing) {
       if (!data.assignments || data.assignments.length === 0) {
         throw new Error('Inclua ao menos um integrante na escala.')

@@ -6,8 +6,10 @@ import { accessChanged, createFirstProfile, setAccessReady, settleWrites, signIn
 import type { ActionKey, AppUser, Member, ModuleKey, Role } from '../models'
 import { effectivePermissions, fullMatrix, hasPermission } from '../models/permissions'
 import { SESSION_KEY, prepareCloud, repos, storage } from '../repositories'
-import { authenticate, completeRoles, purgeDemoUsers, resolveMember, setActor, syncDirectory } from '../services'
+import { authenticate, completeRoles, purgeDemoUsers, resolveMember, scopeChecker, setActor, syncDirectory } from '../services'
+import type { Scope } from '../services'
 import { useCollection } from '../hooks/useCollection'
+import { useScope } from '../hooks/useScope'
 
 const ADMIN_ROLE = 'role-admin'
 
@@ -23,6 +25,10 @@ interface AuthValue {
   switchUser(userId: string): void
   logout(): void
   can(module: ModuleKey, action?: ActionKey): boolean
+  /** Abrangência do perfil: em quais equipes e departamentos as permissões valem. */
+  scope: Scope
+  /** O item de um módulo com ligação a equipe/departamento entra na abrangência? (outros módulos: sempre sim) */
+  inScope(module: ModuleKey, item: object): boolean
 }
 
 const AuthContext = createContext<AuthValue | null>(null)
@@ -48,6 +54,7 @@ function LocalAuthProvider({ children }: { children: ReactNode }) {
   const role = useMemo(() => roles.find((r) => r.id === user?.roleId) ?? null, [roles, user])
   const member = useMemo(() => resolveMember(user, members), [members, user])
   const ready = !loadingUsers && !loadingRoles
+  const scope = useScope(user, role, member)
 
   const persist = useCallback((id: string | null) => {
     setUserId(id)
@@ -87,8 +94,10 @@ function LocalAuthProvider({ children }: { children: ReactNode }) {
       switchUser: (id) => persist(id),
       logout: () => persist(null),
       can: (module, action = 'view') => hasPermission(effectivePermissions(user, role), module, action),
+      scope,
+      inScope: scopeChecker(scope),
     }),
-    [ready, user, role, member, persist],
+    [ready, user, role, member, persist, scope],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
@@ -179,6 +188,7 @@ function CloudAuthProvider({ children }: { children: ReactNode }) {
       : null
   }, [roles, user])
   const member = useMemo(() => ownMember ?? resolveMember(user, members), [ownMember, user, members])
+  const scope = useScope(user, role, member)
 
   // Conta sem acesso: explica na tela de entrada e sai.
   useEffect(() => {
@@ -247,8 +257,10 @@ function CloudAuthProvider({ children }: { children: ReactNode }) {
         void signOutNow()
       },
       can: (module, action = 'view') => hasPermission(effectivePermissions(user, role), module, action),
+      scope,
+      inScope: scopeChecker(scope),
     }),
-    [ready, user, role, member, message],
+    [ready, user, role, member, message, scope],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

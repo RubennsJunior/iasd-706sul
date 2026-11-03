@@ -7,7 +7,7 @@ import type { FieldDef, Values } from '../../components/forms/types'
 import { AssignmentsEditor } from '../../components/rosters/AssignmentsEditor'
 import { useAuth } from '../../contexts/AuthContext'
 import { useToast } from '../../contexts/ToastContext'
-import { useEvents, useMemberNames, useRosters, useTeams, useWorshipServices } from '../../hooks/useData'
+import { useEvents, useMemberNames, useScopedRosters, useScopedTeams, useWorshipServices } from '../../hooks/useData'
 import type { RosterAssignment } from '../../models'
 import { findRosterConflicts, rostersService } from '../../services'
 import { compareDateTime, formatDateShort, todayISO } from '../../utils/date'
@@ -20,10 +20,10 @@ export function RosterFormPage() {
   const { can } = useAuth()
   const toast = useToast()
   const { members, nameOf } = useMemberNames()
-  const { items: teams } = useTeams()
+  const { items: teams } = useScopedTeams()
   const { items: events } = useEvents()
   const { items: services } = useWorshipServices()
-  const { items: rosters, loading } = useRosters()
+  const { items: rosters, loading } = useScopedRosters()
 
   const roster = id ? rosters.find((r) => r.id === id) : undefined
 

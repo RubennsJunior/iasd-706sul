@@ -23,7 +23,7 @@ import { SegmentedTabs } from '../../components/ui/Tabs'
 import { useAuth } from '../../contexts/AuthContext'
 import { useConfirm } from '../../contexts/ConfirmContext'
 import { errorMessage, useToast } from '../../contexts/ToastContext'
-import { useMemberNames, useRosters, useTeams } from '../../hooks/useData'
+import { useMemberNames, useScopedRosters, useTeams } from '../../hooks/useData'
 import { Page } from '../../layouts/PageMeta'
 import type { AssignmentStatus, Roster } from '../../models'
 import { rosterProgress, rostersService } from '../../services'
@@ -39,7 +39,7 @@ export function RostersPage() {
   const confirm = useConfirm()
   const navigate = useNavigate()
   const [params, setParams] = useSearchParams()
-  const { items: rosters } = useRosters()
+  const { items: rosters } = useScopedRosters()
   const { items: teams } = useTeams()
   const { nameOf } = useMemberNames()
   const today = todayISO()

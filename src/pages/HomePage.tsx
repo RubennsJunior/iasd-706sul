@@ -36,7 +36,7 @@ import {
   useMembers,
   useRequests,
   useRosters,
-  useTeams,
+  useScopedTeams,
   useUsers,
   useWorshipServices,
 } from '../hooks/useData'
@@ -86,12 +86,12 @@ interface WeekItem {
 }
 
 export function HomePage() {
-  const { member, can } = useAuth()
+  const { member, can, inScope } = useAuth()
   const toast = useToast()
   const { items: events } = useEvents()
   const { items: rosters } = useRosters()
   const { items: services } = useWorshipServices()
-  const { items: teams } = useTeams()
+  const { items: teams } = useScopedTeams()
   const { items: members } = useMembers()
   const { items: users } = useUsers()
   const { items: activity } = useActivity()
@@ -118,8 +118,8 @@ export function HomePage() {
     [services, today],
   )
   const teamRosters = useMemo(
-    () => rosters.filter((r) => r.date >= today).sort(compareDateTime),
-    [rosters, today],
+    () => rosters.filter((r) => r.date >= today && inScope('escalas', r)).sort(compareDateTime),
+    [rosters, today, inScope],
   )
 
   const weekItems = useMemo<WeekItem[]>(() => {

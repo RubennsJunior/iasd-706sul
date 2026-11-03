@@ -5,7 +5,7 @@ import { FormPage } from '../../components/forms/FormPage'
 import type { FieldDef, Values } from '../../components/forms/types'
 import { useAuth } from '../../contexts/AuthContext'
 import { useToast } from '../../contexts/ToastContext'
-import { useDepartments, useMemberNames, useTeams } from '../../hooks/useData'
+import { useDepartments, useMemberNames, useScopedTeams } from '../../hooks/useData'
 import type { ActiveStatus } from '../../models'
 import { teamsService } from '../../services'
 import { todayISO } from '../../utils/date'
@@ -14,9 +14,9 @@ import { ACTIVE_STATUS_OPTIONS, TEAM_ICON_OPTIONS } from '../../utils/labels'
 /** Cadastro (`/equipes/nova`) e edição (`/equipes/:id/editar`) de equipe. */
 export function TeamFormPage() {
   const { id } = useParams()
-  const { can } = useAuth()
+  const { can, scope } = useAuth()
   const toast = useToast()
-  const { items: teams, loading } = useTeams()
+  const { items: teams, loading } = useScopedTeams()
   const { items: departments } = useDepartments()
   const { members } = useMemberNames()
 
@@ -39,7 +39,8 @@ export function TeamFormPage() {
       label: 'Departamento',
       type: 'select',
       required: true,
-      options: departments.map((d) => ({ value: d.id, label: d.name })),
+      // só os departamentos dentro da abrangência do perfil
+      options: departments.filter((d) => scope.all || scope.departmentIds.has(d.id)).map((d) => ({ value: d.id, label: d.name })),
     },
     { name: 'leaderId', label: 'Líder responsável', type: 'select', options: memberOptions, emptyOption: 'Sem líder' },
     { name: 'foundedAt', label: 'Data de criação', type: 'date', required: true },
