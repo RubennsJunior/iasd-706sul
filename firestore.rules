@@ -1,0 +1,25 @@
+rules_version = '2';
+
+// Regras do Firestore do projeto "erp-igrejaadventista".
+//
+// ATENÇÃO — leia antes de publicar:
+// O login do sistema é próprio (e-mail e senha guardados na coleção "users"), então o Firestore não
+// consegue saber QUEM está lendo ou gravando. Por isso estas regras liberam o acesso às coleções da
+// igreja para qualquer pessoa que conheça o endereço do sistema. Servem para a fase de avaliação, com
+// dados fictícios. Antes de cadastrar membros reais, o próximo passo é migrar o login para o Firebase
+// Authentication e trocar `if true` por regras que conferem o perfil de cada usuário.
+//
+// Tudo fora de "igrejas/..." continua bloqueado.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /igrejas/{igreja} {
+      // documento-marca da primeira carga de dados
+      allow read, create, update: if true;
+      allow delete: if false;
+
+      match /{colecao}/{documento} {
+        allow read, write: if true;
+      }
+    }
+  }
+}

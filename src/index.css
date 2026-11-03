@@ -1,0 +1,124 @@
+@import "tailwindcss";
+@import "@fontsource/poppins/latin-400.css";
+@import "@fontsource/poppins/latin-500.css";
+@import "@fontsource/poppins/latin-600.css";
+@import "@fontsource/poppins/latin-700.css";
+@import "@fontsource/poppins/latin-ext-400.css";
+@import "@fontsource/poppins/latin-ext-600.css";
+@import "@fontsource/playfair-display/latin-600-italic.css";
+
+@theme {
+  --font-sans: "Poppins", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-script: "Playfair Display", Georgia, serif;
+
+  --color-navy-950: #061746;
+  --color-navy-900: #0a2468;
+  --color-navy-800: #0f2f7d;
+  --color-navy-700: #163c96;
+  --color-royal-600: #1d4ed8;
+  --color-royal-500: #3366e6;
+  --color-royal-100: #dbe7ff;
+  --color-royal-50: #eef3ff;
+  --color-gold-600: #c28f12;
+  --color-gold-500: #d9a521;
+  --color-gold-400: #e6b83d;
+  --color-gold-300: #f0cb6a;
+  --color-gold-100: #fbf0cf;
+  --color-page: #eef3fc;
+  --color-ink: #0c1b45;
+  --color-muted: #5b6b8c;
+  --color-line: #e3e9f6;
+
+  --shadow-card: 0 4px 18px rgba(15, 47, 125, 0.08);
+  --shadow-float: 0 10px 28px rgba(10, 36, 104, 0.28);
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-page);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button:not(:disabled) {
+  cursor: pointer;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-royal-500);
+  outline-offset: 2px;
+}
+
+.safe-bottom {
+  padding-bottom: max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px));
+}
+
+.safe-top {
+  padding-top: max(env(safe-area-inset-top, 0px), var(--safe-area-inset-top, 0px));
+}
+
+@keyframes sheet-up {
+  from {
+    transform: translateY(24px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes splash-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.06);
+  }
+}
+
+.anim-sheet {
+  animation: sheet-up 0.22s ease-out;
+}
+
+.anim-fade {
+  animation: fade-in 0.18s ease-out;
+}
+
+.anim-splash {
+  animation: splash-pulse 1.4s ease-in-out infinite;
+}
+
+/* Sem barras de rolagem em nenhuma tela: a rolagem continua funcionando por toque, roda do mouse e teclado. */
+* {
+  scrollbar-width: none;
+}
+
+*::-webkit-scrollbar {
+  display: none;
+}
