@@ -6,11 +6,14 @@ import { Badge } from '../../components/ui/Badge'
 import { useUsers } from '../../hooks/useData'
 import { MODULES } from '../../models'
 import type { PermissionMatrix, Role } from '../../models'
-import { buildMatrix } from '../../models/permissions'
+import { buildMatrix, normalizeMatrix } from '../../models/permissions'
 import { rolesService } from '../../services'
 import { pluralize } from '../../utils/misc'
 
-const modulesWithAccess = (role: Role) => MODULES.filter((m) => role.permissions[m].view || role.permissions[m].manage).length
+const modulesWithAccess = (role: Role) => {
+  const matrix = normalizeMatrix(role.permissions)
+  return MODULES.filter((m) => matrix[m].view || matrix[m].manage).length
+}
 
 const FIELDS: FieldDef[] = [
   { name: 'name', label: 'Nome do perfil', type: 'text', required: true, span: 2 },
@@ -50,7 +53,7 @@ export function RolesPage() {
       fromForm={(values, editing) => ({
         name: String(values.name).trim(),
         description: String(values.description ?? '').trim(),
-        permissions: editing?.system ? editing.permissions : (values.permissions as PermissionMatrix),
+        permissions: editing?.system ? normalizeMatrix(editing.permissions) : normalizeMatrix(values.permissions as PermissionMatrix),
         system: editing?.system,
       })}
       canDelete={(r) => !r.system}

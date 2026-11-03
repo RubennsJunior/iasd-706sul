@@ -1,7 +1,7 @@
 import { Check, Lock } from 'lucide-react'
 import { ACTIONS, MODULES } from '../../models'
 import type { ActionKey, ModuleKey, PermissionMatrix } from '../../models'
-import { ACTION_LABELS, MODULE_LABELS, permissionSet } from '../../models/permissions'
+import { ACTION_LABELS, MODULE_LABELS, normalizeMatrix, permissionSet } from '../../models/permissions'
 import { cn } from '../../utils/misc'
 
 interface Props {
@@ -18,7 +18,7 @@ export function updatePermission(
   action: ActionKey,
   checked: boolean,
 ): PermissionMatrix {
-  const current = matrix[module]
+  const current = matrix[module] ?? permissionSet()
   let next = { ...current, [action]: checked }
   if (action === 'manage' && checked) next = permissionSet(...ACTIONS)
   if (action === 'view' && !checked) next = permissionSet()
@@ -27,7 +27,9 @@ export function updatePermission(
   return { ...matrix, [module]: next }
 }
 
-export function PermissionMatrixEditor({ value, onChange, readOnly }: Props) {
+export function PermissionMatrixEditor({ value: stored, onChange, readOnly }: Props) {
+  // matrizes gravadas antes de um módulo existir não têm a entrada dele: o que falta aparece sem permissão
+  const value = normalizeMatrix(stored)
   const toggleRow = (module: ModuleKey) => {
     const all = ACTIONS.every((a) => value[module][a])
     onChange?.({ ...value, [module]: permissionSet(...(all ? [] : ACTIONS)) })

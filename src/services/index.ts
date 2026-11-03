@@ -2,6 +2,7 @@
 export { setActor, logActivity } from './activity'
 export type { CrudService } from './crud'
 export {
+  completeRoles,
   departmentsService,
   ensureMemberForUser,
   leadersService,

@@ -17,6 +17,7 @@ import { useMembers, useRoles, useUsers } from '../../hooks/useData'
 import { cloudEnabled } from '../../lib/firebase'
 import { createLoginFor, sendReset } from '../../lib/cloudSession'
 import { MODULES } from '../../models'
+import { normalizeMatrix } from '../../models/permissions'
 import type { AppUser, NewEntity, PermissionMatrix, Role, UserStatus } from '../../models'
 import { ensureMemberForUser, membersService, usersService, validateUser } from '../../services'
 import { formatDate, todayISO } from '../../utils/date'
@@ -39,7 +40,8 @@ function UserSummary({ item, values, role }: { item?: AppUser; values: Values; r
   return (
     <Card className="flex flex-wrap items-center gap-4 p-4 sm:p-5">
       <Avatar name={name || 'Novo usuário'} size="lg" />
-      <div className="min-w-0 flex-1">
+      {/* largura mínima própria: em tela estreita os dados de acesso quebram para baixo em vez de espremer o nome */}
+      <div className="min-w-0 grow basis-44">
         <p className="truncate text-lg font-semibold text-navy-900">{name || 'Novo usuário'}</p>
         <p className="truncate text-sm text-muted">{String(values.email ?? '') || 'Informe o e-mail de acesso'}</p>
         <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -49,7 +51,7 @@ function UserSummary({ item, values, role }: { item?: AppUser; values: Values; r
         </div>
       </div>
       {item && (
-        <dl className="grid grid-cols-2 gap-x-6 gap-y-1 text-sm sm:text-right">
+        <dl className="grid w-full grid-cols-2 gap-x-6 gap-y-1 text-sm sm:w-auto sm:text-right">
           <dt className="text-muted">Último acesso</dt>
           <dd className="font-medium text-ink">{lastAccess(item.lastLoginAt)}</dd>
           <dt className="text-muted">Cadastrado em</dt>
@@ -74,11 +76,12 @@ function PermissionsPanel({
   const role = roles.find((r) => r.id === values.roleId)
   const isAdmin = role?.id === ADMIN_ROLE
   const enabled = Boolean(values.customEnabled) && !isAdmin
-  const matrix = enabled ? (values.customPermissions as PermissionMatrix) : role?.permissions
+  // perfis e usuários gravados antes de um módulo existir não o têm: completa com "sem permissão"
+  const matrix = enabled ? normalizeMatrix(values.customPermissions as PermissionMatrix) : role ? normalizeMatrix(role.permissions) : undefined
   const modules = matrix ? MODULES.filter((m) => matrix[m].view || matrix[m].manage).length : 0
 
   const toggle = (on: boolean) => {
-    if (on && role) setValues({ customEnabled: true, customPermissions: values.customPermissions ?? clone(role.permissions) })
+    if (on && role) setValues({ customEnabled: true, customPermissions: values.customPermissions ?? clone(normalizeMatrix(role.permissions)) })
     else setValues({ customEnabled: false, customPermissions: undefined })
   }
 
@@ -301,6 +304,7 @@ export function UserFormPage({ item, backTo }: { item?: AppUser; backTo: string 
         password: '',
         confirmPassword: '',
         customEnabled: Boolean(item.customPermissions),
+        customPermissions: item.customPermissions ? normalizeMatrix(item.customPermissions) : undefined,
       }
     : {
         memberId: '',

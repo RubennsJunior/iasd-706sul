@@ -6,7 +6,7 @@ import { accessChanged, createFirstProfile, setAccessReady, settleWrites, signIn
 import type { ActionKey, AppUser, Member, ModuleKey, Role } from '../models'
 import { effectivePermissions, fullMatrix, hasPermission } from '../models/permissions'
 import { SESSION_KEY, prepareCloud, repos, storage } from '../repositories'
-import { authenticate, purgeDemoUsers, resolveMember, setActor, syncDirectory } from '../services'
+import { authenticate, completeRoles, purgeDemoUsers, resolveMember, setActor, syncDirectory } from '../services'
 import { useCollection } from '../hooks/useCollection'
 
 const ADMIN_ROLE = 'role-admin'
@@ -64,6 +64,14 @@ function LocalAuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     setActor(user?.name ?? 'Sistema')
   }, [user])
+
+  // perfis gravados em versões antigas ganham os módulos novos (uma vez, quando já carregaram)
+  const rolesCompleted = useRef(false)
+  useEffect(() => {
+    if (!ready || rolesCompleted.current) return
+    rolesCompleted.current = true
+    void completeRoles().catch(() => undefined)
+  }, [ready])
 
   const value = useMemo<AuthValue>(
     () => ({
@@ -196,6 +204,7 @@ function CloudAuthProvider({ children }: { children: ReactNode }) {
     prepared.current = user.id
     void (async () => {
       await prepareCloud()
+      await completeRoles()
       await purgeDemoUsers(user.id)
       await syncDirectory()
     })().catch(() => (prepared.current = ''))

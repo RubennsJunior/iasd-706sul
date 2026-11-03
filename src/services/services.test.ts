@@ -19,6 +19,7 @@ import {
   teamsService,
   usersService,
   authenticate,
+  completeRoles,
 } from './index'
 import { attendanceRate, rosterResponses, upcomingBirthdays } from './reports'
 import { addDays, nextWeekday, todayISO } from '../utils/date'
@@ -403,5 +404,40 @@ describe('busca de escalas pelo nome (visitante)', () => {
     expect(searchRostersByName(rosters, nameOf, 'an')).toEqual([])
     expect(searchRostersByName(rosters, nameOf, 'Fulano Inexistente')).toEqual([])
     expect(searchRostersByName(rosters, nameOf, 'ana paula', '2999-01-01')).toEqual([])
+  })
+})
+
+describe('perfis gravados antes de um módulo existir (tela branca em Permissões)', () => {
+  const semPatrimonio = async () => {
+    for (const role of await repos.roles.list()) {
+      const { patrimonio: _removido, ...resto } = role.permissions
+      await repos.roles.update(role.id, { permissions: resto as typeof role.permissions })
+    }
+  }
+
+  it('completa o módulo novo: administrador com tudo, os demais sem acesso, sem mexer no resto', async () => {
+    await semPatrimonio()
+    const antes = (await repos.roles.get('role-secretaria'))!.permissions
+    expect(antes.patrimonio).toBeUndefined()
+
+    await completeRoles()
+
+    const admin = (await repos.roles.get('role-admin'))!.permissions.patrimonio
+    expect(Object.values(admin).every(Boolean)).toBe(true)
+    const secretaria = (await repos.roles.get('role-secretaria'))!.permissions
+    expect(secretaria.patrimonio).toEqual({ view: false, create: false, edit: false, delete: false, manage: false })
+    expect(secretaria.membros).toEqual(antes.membros)
+  })
+
+  it('perfil criado pela igreja também é completado, sem acesso, e rodar de novo não muda nada', async () => {
+    const perfil = await rolesService.create({ name: 'Tesouraria', description: '', permissions: buildMatrix({ eventos: ['view'] }) })
+    await semPatrimonio()
+    await completeRoles()
+    const completo = (await repos.roles.get(perfil.id))!.permissions
+    expect(completo.patrimonio.view).toBe(false)
+    expect(completo.eventos.view).toBe(true)
+    const antes = JSON.stringify(await repos.roles.list())
+    await completeRoles()
+    expect(JSON.stringify(await repos.roles.list())).toBe(antes)
   })
 })

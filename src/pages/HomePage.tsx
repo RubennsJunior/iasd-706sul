@@ -15,6 +15,7 @@ import {
   ListChecks,
   MapPin,
   Music,
+  Package,
   UserPlus,
   UsersRound,
   Zap,
@@ -60,6 +61,7 @@ const ACTIVITY_ICONS: Record<string, LucideIcon> = {
   equipe: UsersRound,
   liturgia: BookOpen,
   culto: ListChecks,
+  patrimonio: Package,
 }
 
 function DateChip({ date, className = '' }: { date: string; className?: string }) {

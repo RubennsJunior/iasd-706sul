@@ -181,6 +181,12 @@ service cloud.firestore {
         allow update: if can('cultos', 'edit') || can('membros', 'delete');
         allow delete: if can('cultos', 'delete');
       }
+      match /assets/{id} {
+        allow read: if can('patrimonio', 'view');
+        allow create: if can('patrimonio', 'create');
+        allow update: if can('patrimonio', 'edit');
+        allow delete: if can('patrimonio', 'delete');
+      }
       match /contacts/{id} {
         allow read: if active();
         allow create: if can('configuracoes', 'create') || can('configuracoes', 'edit');

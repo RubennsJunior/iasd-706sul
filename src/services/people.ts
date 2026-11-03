@@ -9,6 +9,9 @@ import type {
   Role,
   Team,
 } from '../models'
+import { seedRoles } from '../data/seed/people'
+import { MODULES } from '../models'
+import { permissionSet } from '../models/permissions'
 import { repos } from '../repositories'
 import { isValidEmail, normalize, pluralize } from '../utils/misc'
 import { createCrudService } from './crud'
@@ -53,6 +56,22 @@ export async function syncDirectory() {
   for (const member of members) if (known.get(member.id) !== member.fullName) await upsertDirectory(member)
   const ids = new Set(members.map((m) => m.id))
   for (const entry of directory) if (!ids.has(entry.id)) await repos.directory.remove(entry.id)
+}
+
+/**
+ * Perfis gravados antes de existir algum módulo (ex.: Patrimônio) não têm a entrada dele. Completa cada perfil: o módulo
+ * novo recebe o padrão do perfil de fábrica (Administrador Geral: acesso total) ou, em perfis criados pela igreja, fica
+ * sem permissão até alguém liberar. Não mexe no que já estava marcado.
+ */
+export async function completeRoles() {
+  const defaults = new Map(seedRoles().map((r) => [r.id, r.permissions]))
+  for (const role of await repos.roles.list()) {
+    const missing = MODULES.filter((m) => !role.permissions?.[m])
+    if (missing.length === 0) continue
+    const permissions = { ...(role.permissions ?? {}) } as Role['permissions']
+    for (const module of missing) permissions[module] = defaults.get(role.id)?.[module] ?? permissionSet()
+    await repos.roles.update(role.id, { permissions })
+  }
 }
 
 /** Tira da lista as contas de demonstração antigas: na nuvem elas não têm acesso no Firebase Authentication. */

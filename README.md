@@ -139,8 +139,8 @@ Enquanto as regras antigas (abertas) seguirem publicadas, o sistema funciona, ma
 lê e grava os dados**. Depois de publicar as novas regras, quem não tem acesso a uma coleção vê a lista vazia e o servidor
 recusa gravações sem permissão (a tela avisa).
 
-**Testes das regras** (emulador do Firestore, precisa de Java 21): `cd tests/rules && npm install && npm test` — 48 testes
-cobrem visitante, Membro, Líder de Equipe, Secretaria, Administrador, usuário inativo, permissões personalizadas e o
+**Testes das regras** (emulador do Firestore, precisa de Java 21): `cd tests/rules && npm install && npm test` — 52 testes
+cobrem visitante, Membro, Líder de Equipe, Secretaria, Administrador, usuário inativo, permissões personalizadas, o Patrimônio e o
 primeiro acesso do administrador. Para abrir o app contra os emuladores (Firestore e Authentication) em vez do projeto real,
 use `VITE_FIREBASE_EMULATOR=1` e `VITE_FIREBASE_PROJECT_ID=demo-igreja` (em `.env.local`) e `firebase emulators:start`.
 

@@ -1,4 +1,5 @@
 import { BrowserRouter } from 'react-router-dom'
+import { RouteErrorBoundary } from './components/ErrorBoundary'
 import { CloudBanner, CloudNotices } from './components/CloudStatus'
 import { NativeBackButton } from './components/NativeBackButton'
 import { Splash } from './components/Splash'
@@ -17,7 +18,10 @@ export default function App() {
           <ConfirmProvider>
             <CloudBanner />
             <Splash>
-              <AppRoutes />
+              {/* última barreira: falha fora das telas-base (entrada, rotas) não deixa a tela branca */}
+              <RouteErrorBoundary>
+                <AppRoutes />
+              </RouteErrorBoundary>
             </Splash>
           </ConfirmProvider>
         </AuthProvider>

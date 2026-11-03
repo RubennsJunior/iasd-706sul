@@ -1,6 +1,7 @@
 import { Suspense } from 'react'
 import { ArrowLeft } from 'lucide-react'
 import { Link, Outlet, useLocation } from 'react-router-dom'
+import { RouteErrorBoundary } from '../components/ErrorBoundary'
 import { LogoLockup } from '../components/ui/Logo'
 import { useAuth } from '../contexts/AuthContext'
 import { PageLoading } from './PageLoading'
@@ -65,9 +66,11 @@ function PublicFrame() {
       </header>
 
       <main className="relative -mt-5 mx-auto w-full max-w-4xl px-4 pb-16">
-        <Suspense fallback={<PageLoading />}>
-          <Outlet />
-        </Suspense>
+        <RouteErrorBoundary>
+          <Suspense fallback={<PageLoading />}>
+            <Outlet />
+          </Suspense>
+        </RouteErrorBoundary>
       </main>
     </div>
   )

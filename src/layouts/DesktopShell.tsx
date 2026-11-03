@@ -1,6 +1,7 @@
 import { ArrowLeft } from 'lucide-react'
 import { Suspense } from 'react'
 import { Link, NavLink, Outlet } from 'react-router-dom'
+import { RouteErrorBoundary } from '../components/ErrorBoundary'
 import { CHURCH_NAME } from '../config'
 import { useAuth } from '../contexts/AuthContext'
 import { LogoLockup } from '../components/ui/Logo'
@@ -134,9 +135,11 @@ export function DesktopShell() {
         </header>
         <main className="mx-auto max-w-[1280px] px-8 py-6">
           <PageBanner />
-          <Suspense fallback={<PageLoading />}>
-            <Outlet />
-          </Suspense>
+          <RouteErrorBoundary>
+            <Suspense fallback={<PageLoading />}>
+              <Outlet />
+            </Suspense>
+          </RouteErrorBoundary>
         </main>
       </div>
     </div>

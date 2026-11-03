@@ -5,7 +5,7 @@ import { after, before, describe, it } from 'node:test'
 import { assertFails, assertSucceeds, initializeTestEnvironment } from '@firebase/rules-unit-testing'
 import { collection, deleteDoc, doc, getDoc, getDocs, setDoc, updateDoc } from 'firebase/firestore'
 
-const MODULES = ['eventos', 'equipes', 'liturgia', 'membros', 'usuarios', 'lideres', 'cargos', 'departamentos', 'escalas', 'cultos', 'participantes', 'perfis', 'permissoes', 'notificacoes', 'relatorios', 'configuracoes']
+const MODULES = ['eventos', 'equipes', 'liturgia', 'membros', 'usuarios', 'lideres', 'cargos', 'departamentos', 'escalas', 'cultos', 'participantes', 'perfis', 'permissoes', 'notificacoes', 'relatorios', 'configuracoes', 'patrimonio']
 const ACTIONS = ['view', 'create', 'edit', 'delete', 'manage']
 const matrix = (allowed = {}) =>
   Object.fromEntries(MODULES.map((m) => [m, Object.fromEntries(ACTIONS.map((a) => [a, (allowed[m] ?? []).includes(a)]))]))
@@ -51,6 +51,13 @@ before(async () => {
     await put(['users', 'u-membro'], user('u-membro', 'role-membro', { memberId: 'mem-10' }))
     await put(['users', 'u-custom'], user('u-custom', 'role-membro', { customPermissions: matrix({ eventos: ['view', 'create'] }) }))
     await put(['users', 'u-off'], user('u-off', 'role-secretaria', { status: 'inativo' }))
+    // Patrimônio: usuário com permissão personalizada e usuário de um perfil gravado antes de existir o módulo
+    await put(['users', 'u-pat'], user('u-pat', 'role-membro', { customPermissions: matrix({ patrimonio: ['view', 'create'] }) }))
+    const semPatrimonio = matrix({ eventos: ['view'] })
+    delete semPatrimonio.patrimonio
+    await put(['roles', 'role-antigo'], { name: 'Antigo', description: '', permissions: semPatrimonio })
+    await put(['users', 'u-antigo'], user('u-antigo', 'role-antigo'))
+    await put(['assets', 'ast-1'], { name: 'Projetor', assetNumber: '001', category: 'equipamento', condition: 'bom' })
     await put(['members', 'mem-10'], { fullName: 'Lucas', phone: '(11) 90000-0000', email: 'l@x.com', status: 'ativo' })
     await put(['members', 'mem-01'], { fullName: 'Ana', phone: '(11) 91111-1111', email: 'a@x.com', status: 'ativo' })
     await put(['directory', 'mem-10'], { fullName: 'Lucas' })
@@ -223,6 +230,37 @@ describe('Administrador', () => {
   it('não apaga o perfil "system" do administrador, nem o documento-marca', async () => {
     await assertFails(deleteDoc(ref(db(), ['roles', 'role-admin'])))
     await assertFails(deleteDoc(doc(db(), ...base())))
+  })
+})
+
+describe('Patrimônio (coleção assets)', () => {
+  const bem = { name: 'Mesa', assetNumber: '002', category: 'movel', condition: 'bom' }
+  it('visitante, Membro, Líder e Secretaria (sem o módulo) não leem nem gravam', async () => {
+    for (const db of [visitor(), as('u-membro'), as('u-lider'), as('u-sec')]) {
+      await assertFails(getDoc(ref(db, ['assets', 'ast-1'])))
+      await assertFails(list(db, 'assets'))
+      await assertFails(setDoc(ref(db, ['assets', 'ast-x']), bem))
+    }
+  })
+  it('o Administrador lista, cadastra, edita e exclui', async () => {
+    const db = as('u-admin')
+    await assertSucceeds(list(db, 'assets'))
+    await assertSucceeds(setDoc(ref(db, ['assets', 'ast-a']), bem))
+    await assertSucceeds(updateDoc(ref(db, ['assets', 'ast-a']), { condition: 'regular' }))
+    await assertSucceeds(deleteDoc(ref(db, ['assets', 'ast-a'])))
+  })
+  it('permissão personalizada libera só o que foi marcado', async () => {
+    const db = as('u-pat')
+    await assertSucceeds(getDoc(ref(db, ['assets', 'ast-1'])))
+    await assertSucceeds(setDoc(ref(db, ['assets', 'ast-p']), bem))
+    await assertFails(updateDoc(ref(db, ['assets', 'ast-1']), { condition: 'ruim' }))
+    await assertFails(deleteDoc(ref(db, ['assets', 'ast-1'])))
+  })
+  it('perfil gravado antes do módulo existir: sem acesso ao Patrimônio, mas o resto segue funcionando', async () => {
+    const db = as('u-antigo')
+    await assertFails(getDoc(ref(db, ['assets', 'ast-1'])))
+    await assertSucceeds(getDoc(ref(db, ['events', 'ev-1'])))
+    await assertSucceeds(getDoc(ref(db, ['departments', 'dep-1'])))
   })
 })
 

@@ -1,6 +1,7 @@
 import { ArrowLeft } from 'lucide-react'
 import { Suspense } from 'react'
 import { Link, NavLink, Outlet } from 'react-router-dom'
+import { RouteErrorBoundary } from '../components/ErrorBoundary'
 import { useAuth } from '../contexts/AuthContext'
 import { useKeyboardOpen } from '../hooks/useKeyboardOpen'
 import { LogoLockup } from '../components/ui/Logo'
@@ -105,9 +106,11 @@ export function MobileShell() {
     <div className="min-h-dvh bg-page">
       <MobileHeader />
       <main className="relative -mt-5 px-4 pb-32">
-        <Suspense fallback={<PageLoading />}>
-          <Outlet />
-        </Suspense>
+        <RouteErrorBoundary>
+          <Suspense fallback={<PageLoading />}>
+            <Outlet />
+          </Suspense>
+        </RouteErrorBoundary>
       </main>
       {!typing && <BottomNav />}
     </div>
