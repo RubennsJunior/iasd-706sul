@@ -1,4 +1,5 @@
-import type {
+﻿import type {
+  Asset,
   ActivityLog,
   Entity,
   AppNotification,
@@ -97,6 +98,7 @@ export const repos = {
   settings: create<AppSettings>('settings', seedSettings, 'settings'),
   activity: create<ActivityLog>('activity', seedActivity, 'act'),
   requests: create<MemberRequest>('requests', seedRequests, 'req'),
+  assets: create<Asset>('assets', () => [], 'ast'),
 }
 
 void repos.church.list().then(([church]) => {
@@ -169,7 +171,7 @@ export async function importAllData(json: string) {
   }
   const incoming = parsed.data
   // Coleções criadas depois do backup (ex.: solicitações) voltam aos dados de exemplo.
-  const optional = new Set(['requests', 'directory', ...(cloudEnabled ? ['users'] : [])])
+  const optional = new Set(['requests', 'directory', 'assets', ...(cloudEnabled ? ['users'] : [])])
   for (const [name] of entries) {
     if (!Array.isArray(incoming[name]) && !optional.has(name)) throw new Error(`Backup incompleto: falta “${name}”.`)
   }

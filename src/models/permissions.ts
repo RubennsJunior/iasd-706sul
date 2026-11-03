@@ -1,4 +1,4 @@
-import { ACTIONS, MODULES } from './index'
+﻿import { ACTIONS, MODULES } from './index'
 import type { ActionKey, ModuleKey, PermissionMatrix, PermissionSet } from './index'
 
 export const MODULE_LABELS: Record<ModuleKey, string> = {
@@ -10,6 +10,7 @@ export const MODULE_LABELS: Record<ModuleKey, string> = {
   lideres: 'Líderes',
   cargos: 'Cargos e Funções',
   departamentos: 'Departamentos',
+  patrimonio: 'Patrimônio',
   escalas: 'Escalas',
   cultos: 'Cultos e Programações',
   participantes: 'Participantes',

@@ -1,4 +1,4 @@
-import type { AppUser, Department, DirectoryEntry, Member, Position, Role } from '../../models'
+﻿import type { AppUser, Department, DirectoryEntry, Member, Position, Role } from '../../models'
 import { DEMO_PASSWORD } from '../../config'
 import { buildMatrix, fullMatrix } from '../../models/permissions'
 

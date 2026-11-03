@@ -1,4 +1,4 @@
-export type ID = string
+﻿export type ID = string
 
 export interface Entity {
   id: ID
@@ -19,6 +19,7 @@ export const MODULES = [
   'lideres',
   'cargos',
   'departamentos',
+  'patrimonio',
   'escalas',
   'cultos',
   'participantes',
@@ -261,6 +262,24 @@ export interface MemberRequest extends Entity {
   reason?: string
   /** Membro criado quando a solicitação é aprovada. */
   memberId?: ID
+}
+
+/* Patrim�nio */
+
+export type AssetCondition = 'otimo' | 'bom' | 'regular' | 'ruim' | 'inativo'
+export type AssetCategory = 'movel' | 'imovel' | 'equipamento' | 'veiculo' | 'outro'
+
+export interface Asset extends Entity {
+  name: string
+  assetNumber: string
+  category: AssetCategory
+  condition: AssetCondition
+  purchaseDate: string
+  purchaseValue: string
+  location: string
+  responsibleId?: ID
+  description: string
+  notes: string
 }
 
 /* Sistema */

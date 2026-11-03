@@ -1,4 +1,4 @@
-import {
+﻿import {
   BadgeCheck,
   Bell,
   BookOpen,
@@ -20,6 +20,7 @@ import {
   UsersRound,
   House,
   Menu,
+  Package,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import type { ActionKey, ModuleKey } from '../models'
@@ -68,6 +69,7 @@ export const MENU_SECTIONS: NavSection[] = [
       { label: 'Líderes', description: 'Gerencie os líderes da igreja', to: '/lideres', icon: UserCheck, module: 'lideres' },
       { label: 'Cargos e Funções', description: 'Defina os cargos e funções', to: '/cargos', icon: BadgeCheck, module: 'cargos' },
       { label: 'Departamentos', description: 'Gerencie os departamentos', to: '/departamentos', icon: Church, module: 'departamentos' },
+      { label: 'Patrimônio', description: 'Gerencie os bens e patrimônios da igreja', to: '/patrimonio', icon: Package, module: 'patrimonio' },
     ],
   },
   {

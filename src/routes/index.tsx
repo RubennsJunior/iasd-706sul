@@ -1,4 +1,4 @@
-import { lazy } from 'react'
+﻿import { lazy } from 'react'
 import type { ComponentType, ReactNode } from 'react'
 import { Route, Routes } from 'react-router-dom'
 import { AppLayout } from '../layouts/AppLayout'
@@ -36,6 +36,7 @@ const RostersPage = lazyPage(() => import('../pages/management/RostersPage'), 'R
 const ServicesPage = lazyPage(() => import('../pages/management/ServicesPage'), 'ServicesPage')
 const MenuPage = lazyPage(() => import('../pages/MenuPage'), 'MenuPage')
 const DepartmentsPage = lazyPage(() => import('../pages/registry/DepartmentsPage'), 'DepartmentsPage')
+const PatrimonioPage = lazyPage(() => import('../pages/registry/PatrimonioPage'), 'PatrimonioPage')
 const LeadersPage = lazyPage(() => import('../pages/registry/LeadersPage'), 'LeadersPage')
 const RequestsPage = lazyPage(() => import('../pages/registry/RequestsPage'), 'RequestsPage')
 const RequestReviewPage = lazyPage(() => import('../pages/registry/RequestReviewPage'), 'RequestReviewPage')
@@ -106,6 +107,7 @@ export function AppRoutes() {
         <Route path="lideres/*" element={guarded('lideres', <LeadersPage />)} />
         <Route path="cargos/*" element={guarded('cargos', <PositionsPage />)} />
         <Route path="departamentos/*" element={guarded('departamentos', <DepartmentsPage />)} />
+        <Route path="patrimonio/*" element={guarded('patrimonio', <PatrimonioPage />)} />
 
         <Route path="escalas" element={guarded('escalas', <RostersPage />)} />
         <Route path="escalas/nova" element={guarded('escalas', <RosterFormPage />)} />

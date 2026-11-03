@@ -1,6 +1,8 @@
-import type {
+﻿import type {
   ActiveStatus,
   AssignmentStatus,
+  AssetCategory,
+  AssetCondition,
   ContactKind,
   CoverKey,
   EventStatus,
@@ -138,3 +140,20 @@ export const TEAM_ICON_OPTIONS: Option[] = [
   { value: 'users', label: 'Grupo' },
   { value: 'heart', label: 'Família' },
 ]
+export const ASSET_CONDITION: Record<AssetCondition, string> = {
+  otimo: 'Ótimo',
+  bom: 'Bom',
+  regular: 'Regular',
+  ruim: 'Ruim',
+  inativo: 'Inativo / Baixado',
+}
+export const ASSET_CONDITION_OPTIONS = options(ASSET_CONDITION)
+
+export const ASSET_CATEGORY: Record<AssetCategory, string> = {
+  movel: 'Móvel',
+  imovel: 'Imóvel',
+  equipamento: 'Equipamento',
+  veiculo: 'Veículo',
+  outro: 'Outro',
+}
+export const ASSET_CATEGORY_OPTIONS = options(ASSET_CATEGORY)

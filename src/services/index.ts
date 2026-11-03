@@ -1,3 +1,4 @@
+﻿export { assetsService } from './assets'
 export { setActor, logActivity } from './activity'
 export type { CrudService } from './crud'
 export {
