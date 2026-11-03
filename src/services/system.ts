@@ -90,7 +90,7 @@ export async function authenticate(email: string, password: string): Promise<App
   if (!isValidEmail(email.trim())) throw new Error('Informe um e-mail válido.')
   const users = await repos.users.list()
   const user = users.find((u) => u.email.toLowerCase() === email.trim().toLowerCase())
-  if (!user || !(await verifyPassword(password, user.password))) throw new Error('E-mail ou senha incorretos.')
+  if (!user || !(await verifyPassword(password, user.password ?? ''))) throw new Error('E-mail ou senha incorretos.')
   if (user.status !== 'ativo') throw new Error('Este usuário está inativo ou bloqueado.')
   return repos.users.update(user.id, { lastLoginAt: new Date().toISOString() })
 }

@@ -1,5 +1,9 @@
 apply plugin: 'com.android.application'
 
+// Versão e assinatura vêm de scripts/build-apk.mjs (npm run build:apk): versão do package.json e chave fora do repositório.
+def appVersionCode = (project.findProperty('appVersionCode') ?: '1') as int
+def appVersionName = project.findProperty('appVersionName') ?: '1.0'
+
 android {
     namespace = "br.com.igrejasda.app"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -7,8 +11,8 @@ android {
         applicationId "br.com.igrejasda.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        versionCode appVersionCode
+        versionName appVersionName
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -16,8 +20,19 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        release {
+            if (System.getenv('APK_KEYSTORE')) {
+                storeFile file(System.getenv('APK_KEYSTORE'))
+                storePassword System.getenv('APK_STORE_PASSWORD')
+                keyAlias System.getenv('APK_KEY_ALIAS')
+                keyPassword System.getenv('APK_STORE_PASSWORD')
+            }
+        }
+    }
     buildTypes {
         release {
+            signingConfig signingConfigs.release
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }

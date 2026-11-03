@@ -1,24 +1,231 @@
 rules_version = '2';
 
-// Regras do Firestore do projeto "erp-igrejaadventista".
+// Regras do Firestore do projeto "erp-igrejaadventista" (dados em igrejas/<igreja>/<coleção>/<documento>).
 //
-// ATENÇÃO — leia antes de publicar:
-// O login do sistema é próprio (e-mail e senha guardados na coleção "users"), então o Firestore não
-// consegue saber QUEM está lendo ou gravando. Por isso estas regras liberam o acesso às coleções da
-// igreja para qualquer pessoa que conheça o endereço do sistema. Servem para a fase de avaliação, com
-// dados fictícios. Antes de cadastrar membros reais, o próximo passo é migrar o login para o Firebase
-// Authentication e trocar `if true` por regras que conferem o perfil de cada usuário.
+// Quem é quem
+//   - Visitante (sem login): só lê eventos, escalas, equipes, nomes dos membros (diretório), dados da igreja e
+//     configurações; e só pode ENVIAR um pedido de cadastro. Nada mais.
+//   - Pessoa logada (Firebase Authentication): precisa ter um perfil em users/<uid> com status "ativo". As
+//     permissões vêm do perfil de acesso (roles/<id>) ou das permissões personalizadas do próprio usuário —
+//     a mesma matriz módulo × (ver, cadastrar, editar, excluir, gerenciar) que a tela de Permissões edita.
+//   - Administrador de partida: a conta com o e-mail abaixo cria o próprio perfil de administrador no primeiro
+//     acesso. O e-mail da conta já existe no Firebase Authentication, então ninguém mais pode usá-lo.
 //
-// Tudo fora de "igrejas/..." continua bloqueado.
+// IMPORTANTE: ao trocar o administrador de partida, altere o e-mail abaixo (e VITE_ADMIN_EMAIL no site).
 service cloud.firestore {
   match /databases/{database}/documents {
     match /igrejas/{igreja} {
-      // documento-marca da primeira carga de dados
-      allow read, create, update: if true;
+
+      // ---------- identidade e permissões ----------
+      function bootstrapAdmin() {
+        return request.auth != null && request.auth.token.email == 'admin@admin.com';
+      }
+      function userPath() {
+        return /databases/$(database)/documents/igrejas/$(igreja)/users/$(request.auth.uid);
+      }
+      function hasProfile() {
+        return request.auth != null && exists(userPath());
+      }
+      function me() {
+        return get(userPath()).data;
+      }
+      function active() {
+        return hasProfile() && me().status == 'ativo';
+      }
+      function isAdmin() {
+        return active() && me().roleId == 'role-admin';
+      }
+      // permissões personalizadas do usuário valem no lugar das do perfil de acesso
+      function matrix() {
+        return me().get('customPermissions', null) is map
+          ? me().customPermissions
+          : get(/databases/$(database)/documents/igrejas/$(igreja)/roles/$(me().roleId)).data.permissions;
+      }
+      // permissão do módulo (ex.: can('eventos', 'edit'))
+      function can(module, action) {
+        return isAdmin() || (active() && matrix()[module][action] == true);
+      }
+      function canAny(module) {
+        return can(module, 'create') || can(module, 'edit') || can(module, 'delete');
+      }
+      // só mudaram estes campos (além de updatedAt)?
+      function onlyChanges(fields) {
+        return request.resource.data.diff(resource.data).affectedKeys().hasOnly(fields.concat(['updatedAt']));
+      }
+
+      // documento-marca da igreja (primeira carga dos dados de exemplo)
+      allow read: if true;
+      allow create, update: if isAdmin() || bootstrapAdmin();
       allow delete: if false;
 
-      match /{colecao}/{documento} {
-        allow read, write: if true;
+      // ---------- usuários: o documento é users/<uid do Firebase> ----------
+      match /users/{uid} {
+        // cada um lê o próprio perfil (mesmo inativo, para a tela explicar); quem tem "Usuários" lê todos
+        allow get: if request.auth != null && (request.auth.uid == uid || can('usuarios', 'view'));
+        allow list: if can('usuarios', 'view');
+
+        // O administrador de partida cria o próprio perfil, só como administrador ativo.
+        // Quem cadastra usuários nunca concede o perfil de administrador nem permissões personalizadas sem ter essas permissões.
+        allow create: if (bootstrapAdmin() && request.auth.uid == uid
+                          && request.resource.data.roleId == 'role-admin' && request.resource.data.status == 'ativo')
+                      || (can('usuarios', 'create')
+                          && (request.resource.data.roleId != 'role-admin' || isAdmin())
+                          && (!(request.resource.data.get('customPermissions', null) is map) || can('permissoes', 'edit')));
+        allow update: if can('usuarios', 'edit')
+                      && ((request.resource.data.roleId == resource.data.roleId)
+                          || (request.resource.data.roleId != 'role-admin' && resource.data.roleId != 'role-admin')
+                          || isAdmin())
+                      && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['customPermissions'])
+                          || can('permissoes', 'edit'));
+        allow delete: if can('usuarios', 'delete') && (resource.data.roleId != 'role-admin' || isAdmin());
+      }
+
+      // ---------- perfis de acesso ----------
+      match /roles/{id} {
+        allow read: if active();
+        allow create: if can('perfis', 'create');
+        allow update: if can('perfis', 'edit');
+        allow delete: if can('perfis', 'delete') && resource.data.get('system', false) != true;
+      }
+
+      // ---------- diretório público de nomes (mesmo id do membro) ----------
+      match /directory/{id} {
+        allow read: if true;
+        allow create: if can('membros', 'create');
+        allow update: if can('membros', 'edit') || can('membros', 'create');
+        allow delete: if can('membros', 'delete') || can('membros', 'create');
+      }
+
+      // ---------- membros (dados pessoais) ----------
+      match /members/{id} {
+        // lista: quem tem "Membros"; documento: também o cadastro do próprio usuário (users/<uid>.memberId)
+        allow get: if can('membros', 'view') || (active() && me().get('memberId', null) == id);
+        allow list: if can('membros', 'view');
+        allow create: if can('membros', 'create');
+        allow update: if can('membros', 'edit');
+        allow delete: if can('membros', 'delete');
+      }
+
+      // ---------- pedidos de cadastro (enviados por visitantes) ----------
+      match /requests/{id} {
+        allow read: if can('membros', 'view');
+        // visitante só envia pedido novo "pendente", com os campos do formulário
+        allow create: if (request.resource.data.status == 'pendente'
+                          && request.resource.data.keys().hasOnly(['fullName', 'birthDate', 'phone', 'email', 'address', 'baptized', 'baptismDate', 'teamIds', 'message', 'status', 'createdAt', 'updatedAt'])
+                          && request.resource.data.fullName is string && request.resource.data.fullName.size() <= 160
+                          && request.resource.data.message is string && request.resource.data.message.size() <= 1000
+                          && request.resource.data.teamIds is list && request.resource.data.teamIds.size() <= 30)
+                      || can('membros', 'create');
+        allow update: if can('membros', 'edit');
+        allow delete: if can('membros', 'delete');
+      }
+
+      // ---------- agenda: leitura pública ----------
+      match /events/{id} {
+        allow read: if true;
+        allow create: if can('eventos', 'create');
+        // participantes (módulo próprio) também alteram o evento
+        allow update: if can('eventos', 'edit') || canAny('participantes');
+        allow delete: if can('eventos', 'delete');
+      }
+      match /rosters/{id} {
+        allow read: if true;
+        allow create: if can('escalas', 'create');
+        // cada integrante confirma ou recusa a própria escala: só o campo "assignments" muda
+        allow update: if can('escalas', 'edit') || (active() && onlyChanges(['assignments']));
+        allow delete: if can('escalas', 'delete');
+      }
+      match /teams/{id} {
+        allow read: if true;
+        allow create: if can('equipes', 'create');
+        // aprovar cadastros e mudar líderes também mexem nos integrantes/líder da equipe
+        allow update: if can('equipes', 'edit') || can('membros', 'create') || canAny('lideres');
+        allow delete: if can('equipes', 'delete');
+      }
+      match /church/{id} {
+        allow read: if true;
+        allow create: if can('configuracoes', 'create') || can('configuracoes', 'edit');
+        allow update: if can('configuracoes', 'edit');
+        allow delete: if can('configuracoes', 'delete');
+      }
+      match /settings/{id} {
+        allow read: if true;
+        allow create: if can('configuracoes', 'create') || can('configuracoes', 'edit');
+        allow update: if can('configuracoes', 'edit');
+        allow delete: if can('configuracoes', 'delete');
+      }
+
+      // ---------- estrutura da igreja: só quem está logado ----------
+      match /departments/{id} {
+        allow read: if active();
+        allow create: if can('departamentos', 'create');
+        allow update: if can('departamentos', 'edit') || canAny('lideres');
+        allow delete: if can('departamentos', 'delete');
+      }
+      match /positions/{id} {
+        allow read: if active();
+        allow create: if can('cargos', 'create');
+        allow update: if can('cargos', 'edit');
+        allow delete: if can('cargos', 'delete');
+      }
+      match /leaders/{id} {
+        allow read: if active();
+        allow create: if can('lideres', 'create');
+        allow update: if can('lideres', 'edit');
+        // excluir um membro também remove as suas lideranças
+        allow delete: if can('lideres', 'delete') || can('membros', 'delete');
+      }
+      match /services/{id} {
+        allow read: if active();
+        allow create: if can('cultos', 'create');
+        allow update: if can('cultos', 'edit') || can('membros', 'delete');
+        allow delete: if can('cultos', 'delete');
+      }
+      match /contacts/{id} {
+        allow read: if active();
+        allow create: if can('configuracoes', 'create') || can('configuracoes', 'edit');
+        allow update: if can('configuracoes', 'edit');
+        allow delete: if can('configuracoes', 'delete') || can('configuracoes', 'edit');
+      }
+
+      // ---------- liturgia ----------
+      match /{liturgia}/{id} {
+        allow read: if liturgia in ['readings', 'messages', 'materials'] && can('liturgia', 'view');
+        allow create: if liturgia in ['readings', 'messages', 'materials'] && can('liturgia', 'create');
+        allow update: if liturgia in ['readings', 'messages', 'materials'] && can('liturgia', 'edit');
+        allow delete: if liturgia in ['readings', 'messages', 'materials'] && can('liturgia', 'delete');
+      }
+      // hinos: qualquer pessoa logada marca os seus favoritos (só o campo favoriteBy)
+      match /hymns/{id} {
+        allow read: if can('liturgia', 'view');
+        allow create: if can('liturgia', 'create');
+        allow update: if can('liturgia', 'edit') || (active() && onlyChanges(['favoriteBy']));
+        allow delete: if can('liturgia', 'delete');
+      }
+      // pedidos de oração: qualquer pessoa logada envia o seu e marca "orei" (só prayedBy); quem edita liturgia modera
+      match /prayers/{id} {
+        allow read: if can('liturgia', 'view');
+        allow create: if active();
+        allow update: if can('liturgia', 'edit') || (active() && onlyChanges(['prayedBy']));
+        allow delete: if can('liturgia', 'delete');
+      }
+
+      // ---------- avisos e atividades ----------
+      match /notifications/{id} {
+        allow read: if can('notificacoes', 'view');
+        // o sistema avisa a equipe quando algo muda; o pedido de cadastro de um visitante também gera um aviso
+        allow create: if active()
+                      || (request.auth == null && request.resource.data.kind == 'aviso'
+                          && request.resource.data.title == 'Nova solicitação de cadastro'
+                          && request.resource.data.readBy.size() == 0);
+        // marcar como lida: só o campo readBy
+        allow update: if can('notificacoes', 'edit') || (active() && onlyChanges(['readBy']));
+        allow delete: if can('notificacoes', 'delete');
+      }
+      match /activity/{id} {
+        allow read: if active();
+        allow create: if active() || (request.auth == null && request.resource.data.kind == 'membro');
+        allow delete: if active();
       }
     }
   }

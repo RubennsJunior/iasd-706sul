@@ -7,7 +7,7 @@ const fake = vi.hoisted(() => {
   const store = new Map<string, Data>()
   const subs = new Set<{ col: string; next(snapshot: unknown): void; error(error: unknown): void }>()
   const calls: { op: string; path: string; data?: unknown }[] = []
-  const state = { fromCache: false, neverAnswer: false, failListen: undefined as string | undefined, failWrite: undefined as string | undefined, writeDelay: false }
+  const state = { fromCache: false, neverAnswer: false, failListen: undefined as string | undefined, failWrite: undefined as string | undefined, writeDelay: false, rootDenied: false }
   const pendingAcks: (() => void)[] = []
 
   const docsOf = (col: string) =>
@@ -57,7 +57,7 @@ const fake = vi.hoisted(() => {
         ? write('update', r.path, () => apply(r.path, data, true), data)
         : Promise.reject({ code: 'not-found' }),
     deleteDoc: (r: { path: string }) => write('delete', r.path, () => store.delete(r.path)),
-    getDocFromServer: (r: { path: string }) => Promise.resolve({ exists: () => store.has(r.path) }),
+    getDocFromServer: (r: { path: string }) => (state.rootDenied ? Promise.reject({ code: 'permission-denied' }) : Promise.resolve({ exists: () => store.has(r.path) })),
     writeBatch: () => {
       const ops: (() => void)[] = []
       return {
@@ -87,13 +87,15 @@ const fake = vi.hoisted(() => {
       subs.clear()
       calls.length = 0
       pendingAcks.length = 0
-      Object.assign(state, { fromCache: false, neverAnswer: false, failListen: undefined, failWrite: undefined, writeDelay: false })
+      Object.assign(state, { fromCache: false, neverAnswer: false, failListen: undefined, failWrite: undefined, writeDelay: false, rootDenied: false })
     },
   }
 })
 
 vi.mock('firebase/firestore', () => fake.api)
 vi.mock('../lib/firebase', () => ({ FIREBASE_TENANT: 'teste', cloudEnabled: true, getDb: () => ({}) }))
+// sessão já conhecida e sem trocas de conta durante os testes
+vi.mock('../lib/cloudSession', () => ({ whenSessionKnown: (run: () => void) => run(), onSessionChange: () => () => {} }))
 
 import { getCloudStatus } from '../lib/cloudStatus'
 import { bootstrapCloud, createFirestoreRepository } from './firestoreRepository'
@@ -215,9 +217,10 @@ describe('repositório Firestore', () => {
     window.removeEventListener('cloud:write-error', warned)
   })
 
-  it('sem permissão na nuvem, passa a funcionar só no aparelho com os dados de exemplo', async () => {
+  it('regras bloqueando tudo (nem o documento da igreja abre): funciona só no aparelho com os dados de exemplo', async () => {
     const { repo } = fresh()
     fake.state.failListen = 'permission-denied'
+    fake.state.rootDenied = true
     const list = await repo.list()
     expect(list.map((i) => i.id)).toEqual(['i-1', 'i-2'])
     const created = await repo.create({ name: 'Só local' })
@@ -231,6 +234,7 @@ describe('repositório Firestore', () => {
     const { repo } = fresh()
     fake.state.fromCache = true // o Firestore entrega primeiro o cache em disco, vazio
     fake.state.failListen = undefined
+    fake.state.rootDenied = true // as regras bloqueiam tudo: nem o documento da igreja pode ser lido
     let settled = false
     const pending = repo.list().then((items) => ((settled = true), items))
     await tick()
@@ -248,6 +252,16 @@ describe('repositório Firestore', () => {
     fake.state.fromCache = true
     expect(await repo.list()).toEqual([])
     expect(repo.peek?.()).toEqual([])
+  })
+
+  it('perfil sem permissão de leitura: a coleção aparece vazia e o app NÃO cai no modo local', async () => {
+    const { name, repo } = fresh()
+    fake.state.failListen = 'permission-denied' // o documento da igreja continua legível
+    expect(await repo.list()).toEqual([])
+    expect(repo.peek?.()).toEqual([])
+    // a gravação segue para o servidor, que decide pelas regras
+    const created = await repo.create({ name: 'Pedido público' })
+    expect(fake.calls.at(-1)).toMatchObject({ op: 'set', path: PATH(name, created.id) })
   })
 
   it('sem resposta por 10 segundos, segue com os dados locais', async () => {

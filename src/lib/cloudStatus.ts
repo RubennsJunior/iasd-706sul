@@ -62,5 +62,8 @@ export function explainCloudError(error: unknown): string {
 
 /** Avisa as telas (ver `CloudNotices`) que uma gravação não foi aceita pela nuvem. */
 export function reportWriteError(error: unknown) {
-  window.dispatchEvent(new CustomEvent('cloud:write-error', { detail: explainCloudError(error) }))
+  // numa gravação, "sem permissão" é o perfil de quem está logado (as regras já estão publicadas e a nuvem responde)
+  const denied = (error as { code?: string } | undefined)?.code === 'permission-denied'
+  const detail = denied ? 'Seu perfil não tem permissão para esta ação.' : explainCloudError(error)
+  window.dispatchEvent(new CustomEvent('cloud:write-error', { detail }))
 }

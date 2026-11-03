@@ -9,6 +9,7 @@ import type {
   ChurchProfile,
   ContactInfo,
   Department,
+  DirectoryEntry,
   Hymn,
   LeaderAssignment,
   Member,
@@ -26,6 +27,7 @@ import { seedEvents, seedRosters, seedServices } from '../data/seed/agenda'
 import { seedHymns, seedMaterials, seedMessages, seedPrayers, seedReadings } from '../data/seed/liturgy'
 import {
   seedDepartments,
+  seedDirectory,
   seedMembers,
   seedPositions,
   seedRoles,
@@ -42,7 +44,6 @@ import {
 } from '../data/seed/system'
 import { CHURCH_NAME } from '../config'
 import { cloudEnabled } from '../lib/firebase'
-import { hashPassword, isHashed } from '../utils/password'
 import { bootstrapCloud, createFirestoreRepository } from './firestoreRepository'
 import type { CloudRepository, FirestoreRepositoryOptions } from './firestoreRepository'
 import {
@@ -72,13 +73,11 @@ function create<T extends Entity>(
   return cloudEnabled ? createFirestoreRepository<T>(name, seed, idPrefix, options) : createLocalRepository<T>(name, seed, idPrefix)
 }
 
-/** Na nuvem a senha é gravada como resumo (hash), nunca em texto aberto. */
-const protectPassword = async (data: Partial<AppUser>): Promise<Partial<AppUser>> =>
-  data.password && !isHashed(data.password) ? { ...data, password: await hashPassword(data.password) } : data
-
 export const repos = {
   members: create<Member>('members', seedMembers, 'mem'),
-  users: create<AppUser>('users', seedUsers, 'user', { prepare: protectPassword }),
+  // Na nuvem os usuários são cadastrados pelo administrador (cada um com acesso no Firebase Authentication); não há exemplos.
+  users: create<AppUser>('users', cloudEnabled ? () => [] : seedUsers, 'user'),
+  directory: create<DirectoryEntry>('directory', seedDirectory, 'dir'),
   roles: create<Role>('roles', seedRoles, 'role'),
   departments: create<Department>('departments', seedDepartments, 'dep'),
   positions: create<Position>('positions', seedPositions, 'pos'),
@@ -106,15 +105,28 @@ void repos.church.list().then(([church]) => {
 
 const entries = Object.entries(repos)
 
-if (cloudEnabled) void bootstrapCloud(entries.map(([, repo]) => repo as unknown as CloudRepository<Entity>))
+/**
+ * Primeira configuração da nuvem, feita pelo administrador logo depois de entrar: grava os dados de exemplo se a
+ * igreja ainda não tem nada.
+ */
+export async function prepareCloud() {
+  if (!cloudEnabled) return
+  await bootstrapCloud(entries.map(([, repo]) => repo as unknown as CloudRepository<Entity>))
+}
+
+/** Usuários na nuvem têm acesso próprio no Firebase Authentication: restaurar/importar dados nunca mexe neles. */
+const keepUsers = (name: string) => cloudEnabled && name === 'users'
+
+const directoryOf = (members: Array<{ id: string; fullName: string }>): DirectoryEntry[] =>
+  members.map((m) => ({ id: m.id, fullName: m.fullName }))
 
 /** Volta todos os cadastros para os dados fictícios iniciais. */
 export async function resetAllData() {
-  for (const [, repo] of entries) await repo.reset()
+  for (const [name, repo] of entries) if (!keepUsers(name)) await repo.reset()
 }
 
 export function exportAllData(): string {
-  const data = Object.fromEntries(entries.map(([name, repo]) => [name, repo.dump()]))
+  const data = Object.fromEntries(entries.filter(([name]) => !keepUsers(name)).map(([name, repo]) => [name, repo.dump()]))
   return JSON.stringify({ version: DATA_VERSION, exportedAt: new Date().toISOString(), data }, null, 2)
 }
 
@@ -130,12 +142,15 @@ export async function importAllData(json: string) {
   }
   const incoming = parsed.data
   // Coleções criadas depois do backup (ex.: solicitações) voltam aos dados de exemplo.
-  const optional = new Set(['requests'])
+  const optional = new Set(['requests', 'directory', ...(cloudEnabled ? ['users'] : [])])
   for (const [name] of entries) {
     if (!Array.isArray(incoming[name]) && !optional.has(name)) throw new Error(`Backup incompleto: falta “${name}”.`)
   }
   for (const [name, repo] of entries) {
-    if (Array.isArray(incoming[name])) await repo.load(incoming[name] as never[])
+    if (keepUsers(name)) continue
+    // o diretório de nomes sempre acompanha os membros importados
+    if (name === 'directory') await repo.load(directoryOf(incoming.members as Array<{ id: string; fullName: string }>) as never[])
+    else if (Array.isArray(incoming[name])) await repo.load(incoming[name] as never[])
     else await repo.reset()
   }
 }

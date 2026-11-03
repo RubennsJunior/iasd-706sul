@@ -13,6 +13,7 @@ import type { Unsubscribe } from 'firebase/firestore'
 import type { Entity, ID } from '../models'
 import { FIREBASE_TENANT, getDb } from '../lib/firebase'
 import { explainCloudError, reportRepoState, reportWriteError } from '../lib/cloudStatus'
+import { onSessionChange, whenSessionKnown } from '../lib/cloudSession'
 import { uid } from '../utils/misc'
 import { DATA_VERSION, STORAGE_NAMESPACE, createLocalRepository, storage } from './localRepository'
 import type { ResettableRepository } from './repository'
@@ -33,6 +34,22 @@ export interface CloudRepository<T extends Entity> extends ResettableRepository<
 }
 
 const now = () => new Date().toISOString()
+
+/**
+ * A nuvem responde? O documento da igreja é de leitura pública; se nem ele pode ser lido, as regras estão
+ * bloqueando tudo (ou o banco não existe) e o app segue em modo local. Se pode, "sem permissão" numa coleção
+ * significa só que o perfil de quem está logado não enxerga aquela coleção.
+ */
+let probing: Promise<boolean> | undefined
+const cloudAccessible = () =>
+  (probing ??= getDocFromServer(doc(getDb(), 'igrejas', FIREBASE_TENANT))
+    .then(
+      () => true,
+      () => false,
+    )
+    .finally(() => {
+      probing = undefined // várias coleções perguntam ao mesmo tempo; cada rodada faz uma só leitura
+    }))
 
 /**
  * Repositório sincronizado com o Firestore (`igrejas/<tenant>/<coleção>`).
@@ -68,7 +85,11 @@ export function createFirestoreRepository<T extends Entity>(
   let version = 0
   let current: T[] = []
   let markReady!: () => void
-  const ready = new Promise<void>((resolve) => (markReady = resolve))
+  let ready!: Promise<void>
+  const newReady = () => {
+    ready = new Promise<void>((resolve) => (markReady = resolve))
+  }
+  newReady()
 
   const emit = () => listeners.forEach((listener) => listener())
   local.subscribe(emit)
@@ -107,9 +128,28 @@ export function createFirestoreRepository<T extends Entity>(
     emit()
   }
 
+  /** Perfil sem acesso de leitura a esta coleção: ela aparece vazia (e as gravações são decididas pelas regras). */
+  const restrictOrFallBack = async (error: unknown) => {
+    clearTimeout(timer)
+    if (!(await cloudAccessible())) return mode === 'pending' ? fallBack(error) : undefined
+    if (mode !== 'pending') return
+    mode = 'cloud'
+    confirmed = true
+    server = new Map()
+    reportRepoState(name, { state: 'online' })
+    rebuild()
+    markReady()
+    emit()
+  }
+
   const start = () => {
     if (started) return
     started = true
+    // espera saber quem está logado: as regras dependem disso
+    whenSessionKnown(attach)
+  }
+
+  const attach = () => {
     timer = setTimeout(() => fallBack('timeout'), READY_TIMEOUT_MS)
     try {
       stop = onSnapshot(
@@ -134,6 +174,7 @@ export function createFirestoreRepository<T extends Entity>(
         },
         (error) => {
           if (mode === 'cloud') reportRepoState(name, { state: 'cache', reason: explainCloudError(error) })
+          else if (error.code === 'permission-denied') void restrictOrFallBack(error)
           else fallBack(error)
         },
       )
@@ -141,6 +182,27 @@ export function createFirestoreRepository<T extends Entity>(
       fallBack(error)
     }
   }
+
+  // Entrou, saiu ou trocou de conta: o que as regras liberam muda, então a coleção é lida de novo.
+  onSessionChange(() => {
+    if (!started) return
+    stop?.()
+    stop = undefined
+    clearTimeout(timer)
+    mode = 'pending'
+    started = false
+    fellBackByTimeout = false
+    localWrites = false
+    confirmed = false
+    server = new Map()
+    overlay.clear()
+    current = []
+    markReady() // quem já esperava pela leitura anterior segue (com a lista vazia) em vez de ficar preso
+    newReady()
+    reportRepoState(name, { state: 'connecting' })
+    emit()
+    if (listeners.size > 0) start()
+  })
 
   /** Aplica a mudança na tela já e envia ao Firestore em seguida. */
   const commit = (id: ID, value: T | null, send: () => Promise<unknown>) => {

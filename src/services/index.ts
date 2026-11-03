@@ -7,9 +7,12 @@ export {
   memberUsage,
   resolveMember,
   positionsService,
+  purgeDemoUsers,
   rolesService,
+  syncDirectory,
   teamsService,
   usersService,
+  validateUser,
 } from './people'
 export {
   eventPhase,

@@ -195,6 +195,7 @@ export function FormPage({
               type={field.type}
               value={(value as string | number) ?? ''}
               placeholder={field.placeholder}
+              disabled={field.readOnly}
               min={field.min}
               max={field.max}
               autoComplete={field.type === 'password' ? 'new-password' : 'off'}

@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react'
 import { Bell, LogOut, Repeat } from 'lucide-react'
 import { DEMO_MODE } from '../config'
+import { ChangePassword } from '../components/account/ChangePassword'
+import { cloudEnabled } from '../lib/firebase'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useNotifications, useRoles, useUsers } from '../hooks/useData'
@@ -115,6 +117,8 @@ export function AccountButton({ showName, className }: { showName?: boolean; cla
             </ul>
           </>
         )}
+
+        {cloudEnabled && <ChangePassword />}
 
         <Button
           variant="outline"

@@ -4,6 +4,7 @@ import type {
   ID,
   LeaderAssignment,
   Member,
+  NewEntity,
   Position,
   Role,
   Team,
@@ -37,12 +38,42 @@ export async function memberUsage(memberId: ID) {
   }
 }
 
+/** Mantém o diretório público de nomes (visitante e perfis sem acesso a "Membros") igual ao cadastro de membros. */
+async function upsertDirectory(member: { id: ID; fullName: string }) {
+  const existing = await repos.directory.get(member.id)
+  if (!existing) await repos.directory.create({ id: member.id, fullName: member.fullName })
+  else if (existing.fullName !== member.fullName) await repos.directory.update(member.id, { fullName: member.fullName })
+}
+
+/** Acerta o diretório de nomes com os membros (dados anteriores ao diretório, importações). Só para quem enxerga os membros. */
+export async function syncDirectory() {
+  const [members, directory] = await Promise.all([repos.members.list(), repos.directory.list()])
+  if (members.length === 0) return // sem acesso aos membros (ou nenhum): nunca apagar o diretório por isso
+  const known = new Map(directory.map((d) => [d.id, d.fullName]))
+  for (const member of members) if (known.get(member.id) !== member.fullName) await upsertDirectory(member)
+  const ids = new Set(members.map((m) => m.id))
+  for (const entry of directory) if (!ids.has(entry.id)) await repos.directory.remove(entry.id)
+}
+
+/** Tira da lista as contas de demonstração antigas: na nuvem elas não têm acesso no Firebase Authentication. */
+export async function purgeDemoUsers(keepId: ID) {
+  for (const user of await repos.users.list()) {
+    if (user.id !== keepId && user.email.endsWith('@igreja.demo')) await repos.users.remove(user.id)
+  }
+}
+
 export const membersService = createCrudService<Member>(repos.members, {
   label: 'Membro',
   activityKind: 'membro',
   nameOf: (m) => m.fullName,
   validate(data) {
     if (data.email && !isValidEmail(data.email)) throw new Error('Informe um e-mail válido.')
+  },
+  async afterSave(member, previous) {
+    if (!previous || previous.fullName !== member.fullName) await upsertDirectory(member)
+  },
+  async afterRemove(member) {
+    await repos.directory.remove(member.id)
   },
   async beforeRemove(member) {
     const id = member.id
@@ -110,28 +141,31 @@ export function resolveMember(user: AppUser | null | undefined, members: Member[
   )
 }
 
+/** Regras do cadastro de usuário; a tela também as usa antes de criar o acesso no Firebase (para não deixar acesso órfão). */
+export async function validateUser(data: Partial<NewEntity<AppUser>>, existing?: AppUser) {
+  if (data.email && !isValidEmail(data.email)) throw new Error('Informe um e-mail válido.')
+  if (data.password !== undefined && data.password.length < 4) {
+    throw new Error('A senha deve ter pelo menos 4 caracteres.')
+  }
+  const all = await repos.users.list()
+  if (existing?.roleId === 'role-admin') {
+    const demoted = data.roleId !== 'role-admin' || data.status !== 'ativo'
+    const otherAdmins = all.filter((u) => u.id !== existing.id && u.roleId === 'role-admin' && u.status === 'ativo')
+    if (demoted && otherAdmins.length === 0) {
+      throw new Error('Mantenha ao menos um administrador ativo no sistema.')
+    }
+  }
+  const email = data.email?.trim().toLowerCase()
+  if (email && all.some((u) => u.id !== existing?.id && u.email.toLowerCase() === email)) {
+    throw new Error('Já existe um usuário com este e-mail.')
+  }
+}
+
 export const usersService = createCrudService<AppUser>(repos.users, {
   label: 'Usuário',
   activityKind: 'usuario',
   nameOf: (u) => u.name,
-  async validate(data, existing) {
-    if (data.email && !isValidEmail(data.email)) throw new Error('Informe um e-mail válido.')
-    if (data.password !== undefined && data.password.length < 4) {
-      throw new Error('A senha deve ter pelo menos 4 caracteres.')
-    }
-    const all = await repos.users.list()
-    if (existing?.roleId === 'role-admin') {
-      const demoted = data.roleId !== 'role-admin' || data.status !== 'ativo'
-      const otherAdmins = all.filter((u) => u.id !== existing.id && u.roleId === 'role-admin' && u.status === 'ativo')
-      if (demoted && otherAdmins.length === 0) {
-        throw new Error('Mantenha ao menos um administrador ativo no sistema.')
-      }
-    }
-    const email = data.email?.trim().toLowerCase()
-    if (email && all.some((u) => u.id !== existing?.id && u.email.toLowerCase() === email)) {
-      throw new Error('Já existe um usuário com este e-mail.')
-    }
-  },
+  validate: validateUser,
   async beforeRemove(user) {
     const admins = (await repos.users.list()).filter(
       (u) => u.roleId === 'role-admin' && u.status === 'ativo' && u.id !== user.id,

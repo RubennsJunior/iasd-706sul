@@ -1,7 +1,7 @@
 {
   "name": "igreja-sda-gestao",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "engines": {
     "node": ">=22"
@@ -15,6 +15,7 @@
     "icons": "node scripts/generate-icons.mjs",
     "cap:sync": "npm run build && cap sync android",
     "cap:open": "cap open android",
+    "build:apk": "node scripts/build-apk.mjs",
     "android:apk": "npm run cap:sync && cd android && .\\gradlew.bat assembleDebug"
   },
   "dependencies": {

@@ -57,7 +57,10 @@ export interface AppUser extends Entity {
   name: string
   email: string
   phone: string
-  password: string
+  /** Só no modo local (demonstração). Na nuvem a senha fica no Firebase Authentication e o `id` do usuário é o uid dele. */
+  password?: string
+  /** Quando o próprio usuário trocou a senha inicial (aviso para o administrador). */
+  passwordChangedAt?: string
   roleId: ID
   status: UserStatus
   birthDate?: string
@@ -67,6 +70,11 @@ export interface AppUser extends Entity {
   lastLoginAt?: string
   /** Vínculo interno com o cadastro de membro (definido nos dados de exemplo); sem ele o membro é reconhecido por e-mail ou nome. */
   memberId?: ID
+}
+
+/** Nome público de cada membro (mesmo `id` do membro): é o que o visitante e os perfis sem acesso a "Membros" enxergam. */
+export interface DirectoryEntry extends Entity {
+  fullName: string
 }
 
 export interface Role extends Entity {

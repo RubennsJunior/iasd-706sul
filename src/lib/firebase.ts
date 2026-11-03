@@ -1,9 +1,13 @@
 import { Capacitor } from '@capacitor/core'
 import { getApp, getApps, initializeApp } from 'firebase/app'
 import type { FirebaseApp } from 'firebase/app'
+import { connectAuthEmulator, getAuth } from 'firebase/auth'
+import type { Auth } from 'firebase/auth'
 import {
+  connectFirestoreEmulator,
   getFirestore,
   initializeFirestore,
+  memoryLocalCache,
   persistentLocalCache,
   persistentMultipleTabManager,
 } from 'firebase/firestore'
@@ -35,8 +39,16 @@ export const FIREBASE_TENANT: string = env.VITE_FIREBASE_TENANT || 'iasd-706-sul
  */
 export const cloudEnabled: boolean = env.MODE !== 'test' && env.VITE_DATA_BACKEND !== 'local'
 
+/**
+ * Emuladores locais do Firebase (Firestore e Authentication), para testar as regras de segurança sem tocar
+ * no projeto real: `VITE_FIREBASE_EMULATOR=1` (veja README).
+ */
+const EMULATOR = Boolean(env.VITE_FIREBASE_EMULATOR)
+const EMULATOR_HOST: string = env.VITE_EMULATOR_HOST || '127.0.0.1'
+
 let app: FirebaseApp | undefined
 let db: Firestore | undefined
+let auth: Auth | undefined
 
 export function getFirebaseApp(): FirebaseApp {
   app ??= getApps().length ? getApp() : initializeApp(firebaseConfig)
@@ -49,17 +61,30 @@ export function getDb(): Firestore {
   const instance = getFirebaseApp()
   try {
     db = initializeFirestore(instance, {
-      localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
+      // com o emulador o cache fica só na memória, para um teste não herdar dados do anterior
+      localCache: EMULATOR ? memoryLocalCache() : persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
       // campos vazios (undefined) são simplesmente omitidos
       ignoreUndefinedProperties: true,
       // alguns aparelhos e redes bloqueiam o canal contínuo; nesses casos usa requisições comuns
-      experimentalAutoDetectLongPolling: true,
+      experimentalAutoDetectLongPolling: !EMULATOR,
     })
   } catch {
     db = getFirestore(instance)
   }
+  if (EMULATOR) connectFirestoreEmulator(db, EMULATOR_HOST, 8080)
   return db
 }
+
+/** Firebase Authentication: a sessão fica guardada no aparelho (continua logado, inclusive sem internet). */
+export function getFirebaseAuth(): Auth {
+  if (auth) return auth
+  auth = getAuth(getFirebaseApp())
+  if (EMULATOR) connectAuthEmulator(auth, `http://${EMULATOR_HOST}:9099`, { disableWarnings: true })
+  return auth
+}
+
+export const usingEmulator = EMULATOR
+export const emulatorHost = EMULATOR_HOST
 
 /** Google Analytics: só no site publicado (não no desenvolvimento nem dentro do aplicativo Android). */
 export async function initAnalytics() {

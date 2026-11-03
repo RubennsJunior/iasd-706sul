@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { ShieldCheck, UserRound } from 'lucide-react'
 import { useSearchParams } from 'react-router-dom'
 import { PermissionMatrixEditor } from '../../components/admin/PermissionMatrixEditor'
@@ -7,14 +7,17 @@ import { FormPage } from '../../components/forms/FormPage'
 import type { FormTab } from '../../components/forms/FormPage'
 import type { FieldDef, Values } from '../../components/forms/types'
 import { Avatar } from '../../components/ui/Avatar'
+import { Button } from '../../components/ui/Button'
 import { Badge, StatusBadge } from '../../components/ui/Badge'
 import { Card } from '../../components/ui/Card'
 import { useAuth } from '../../contexts/AuthContext'
 import { useToast } from '../../contexts/ToastContext'
-import { useRoles } from '../../hooks/useData'
+import { useMembers, useRoles } from '../../hooks/useData'
+import { cloudEnabled } from '../../lib/firebase'
+import { createLoginFor, sendReset } from '../../lib/cloudSession'
 import { MODULES } from '../../models'
-import type { AppUser, PermissionMatrix, Role, UserStatus } from '../../models'
-import { usersService } from '../../services'
+import type { AppUser, NewEntity, PermissionMatrix, Role, UserStatus } from '../../models'
+import { resolveMember, usersService, validateUser } from '../../services'
 import { formatDate, todayISO } from '../../utils/date'
 import { USER_STATUS_OPTIONS } from '../../utils/labels'
 
@@ -114,18 +117,54 @@ function PermissionsPanel({
   )
 }
 
+/** Na nuvem a senha de outra pessoa não pode ser trocada daqui (só o Firebase sabe): envia o e-mail de nova senha. */
+function ResetPassword({ email }: { email: string }) {
+  const toast = useToast()
+  const [busy, setBusy] = useState(false)
+  const send = async () => {
+    setBusy(true)
+    try {
+      await sendReset(email)
+      toast.success(`Enviamos o link de nova senha para ${email}.`)
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Não foi possível enviar o e-mail.')
+    } finally {
+      setBusy(false)
+    }
+  }
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line px-3.5 py-3">
+      <p className="text-sm text-muted">A senha fica no Firebase. Para trocá-la, envie o link de nova senha ao e-mail do usuário.</p>
+      <Button variant="outline" size="sm" onClick={send} loading={busy}>
+        Enviar link de nova senha
+      </Button>
+    </div>
+  )
+}
+
 /** Cadastro (`/usuarios/novo`) e edição (`/usuarios/:id/editar`) de usuário, com abas Dados e Permissão. */
 export function UserFormPage({ item, backTo }: { item?: AppUser; backTo: string }) {
   const toast = useToast()
   const { can } = useAuth()
   const { items: roles } = useRoles()
+  const { items: members } = useMembers()
   const [params] = useSearchParams()
   const canCustomize = can('permissoes', 'edit')
 
   const fields = useMemo<FieldDef[]>(
     () => [
       { name: 'name', label: 'Nome completo', type: 'text', required: true, span: 2, tab: 'dados', section: 'Informações pessoais' },
-      { name: 'email', label: 'E-mail (login)', type: 'email', required: true, tab: 'dados', section: 'Informações pessoais' },
+      {
+        name: 'email',
+        label: 'E-mail (login)',
+        type: 'email',
+        required: true,
+        // na nuvem o e-mail é o acesso criado no Firebase; não dá para trocá-lo daqui
+        readOnly: cloudEnabled && Boolean(item),
+        hint: cloudEnabled && item ? 'O e-mail de acesso não pode ser alterado.' : undefined,
+        tab: 'dados',
+        section: 'Informações pessoais',
+      },
       { name: 'phone', label: 'Telefone / WhatsApp', type: 'tel', placeholder: '(00) 00000-0000', tab: 'dados', section: 'Informações pessoais' },
       {
         name: 'birthDate',
@@ -141,7 +180,14 @@ export function UserFormPage({ item, backTo }: { item?: AppUser; backTo: string 
         label: 'Senha',
         type: 'password',
         required: !item,
-        hint: item ? 'Deixe em branco para manter a senha atual. Mínimo de 4 caracteres.' : 'Mínimo de 4 caracteres.',
+        hint: cloudEnabled
+          ? 'Mínimo de 6 caracteres. A pessoa pode trocá-la depois, em “Minha conta”.'
+          : item
+            ? 'Deixe em branco para manter a senha atual. Mínimo de 4 caracteres.'
+            : 'Mínimo de 4 caracteres.',
+        // na nuvem a senha só é definida ao criar; depois, cada pessoa troca a sua ou pede o e-mail de nova senha
+        showIf: () => !(cloudEnabled && item),
+        validate: (value) => (cloudEnabled && value && String(value).length < 6 ? 'A senha deve ter pelo menos 6 caracteres.' : undefined),
         tab: 'dados',
         section: 'Acesso ao aplicativo',
       },
@@ -150,9 +196,19 @@ export function UserFormPage({ item, backTo }: { item?: AppUser; backTo: string 
         label: 'Confirmar senha',
         type: 'password',
         required: !item,
+        showIf: () => !(cloudEnabled && item),
         tab: 'dados',
         section: 'Acesso ao aplicativo',
         validate: (value, values) => (value !== values.password ? 'As senhas não conferem.' : undefined),
+      },
+      {
+        name: 'resetPassword',
+        label: 'Senha',
+        type: 'custom',
+        showIf: () => cloudEnabled && Boolean(item),
+        tab: 'dados',
+        section: 'Acesso ao aplicativo',
+        render: () => <ResetPassword email={item?.email ?? ''} />,
       },
       {
         name: 'status',
@@ -225,7 +281,16 @@ export function UserFormPage({ item, backTo }: { item?: AppUser; backTo: string 
       status: values.status as UserStatus,
       customPermissions: custom ? (values.customPermissions as PermissionMatrix) : undefined,
     }
-    if (item) await usersService.update(item.id, values.password ? { ...payload, password: String(values.password) } : payload)
+    if (cloudEnabled) {
+      if (item) await usersService.update(item.id, payload)
+      else {
+        // regras de negócio primeiro: o acesso no Firebase só é criado se o cadastro for aceito
+        await validateUser(payload)
+        const uid = await createLoginFor(payload.email, String(values.password))
+        const linked = resolveMember({ name: payload.name, email: payload.email } as AppUser, members)
+        await usersService.create({ ...payload, id: uid, memberId: linked?.id } as NewEntity<AppUser>)
+      }
+    } else if (item) await usersService.update(item.id, values.password ? { ...payload, password: String(values.password) } : payload)
     else await usersService.create({ ...payload, password: String(values.password) })
     toast.success(item ? 'Usuário atualizado com sucesso.' : 'Usuário cadastrado com sucesso.')
   }

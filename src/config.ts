@@ -1,15 +1,24 @@
+import { cloudEnabled } from './lib/firebase'
+
 /** Nome exibido no sistema. Provisório: para voltar ao nome completo, altere somente aqui (e no manifest/index.html). */
 export const CHURCH_NAME = 'IASD 706 Sul'
 
 export const APP_NAME = CHURCH_NAME
 export const APP_VERSION = '1.0.0'
-export const APP_BUILD = 'Etapa 2 — dados na nuvem (Firebase)'
+export const APP_BUILD = 'Etapa 3 — nuvem com login (Firebase)'
+
+/**
+ * E-mail do primeiro administrador. A conta é criada no Firebase Authentication; ao entrar pela primeira vez
+ * ela ganha o perfil de administrador. É só uma dica da interface: quem libera isso é `firestore.rules`
+ * (o mesmo e-mail precisa estar lá).
+ */
+export const BOOTSTRAP_ADMIN_EMAIL: string = import.meta.env.VITE_ADMIN_EMAIL || 'admin@admin.com'
 
 /** Senha dos usuários de demonstração; existe só para testes. */
 export const DEMO_PASSWORD = '123456'
 
 /**
- * Contas de demonstração (lista na tela de login e "Testar outro perfil"). Ficam ligadas por padrão para
- * a fase de avaliação; antes de cadastrar dados reais publique com `VITE_DEMO_MODE=false`.
+ * Contas de demonstração (lista na tela de login e "Testar outro perfil"): só no modo local. Com a nuvem ligada o
+ * acesso é pelo Firebase Authentication e essas contas não existem.
  */
-export const DEMO_MODE: boolean = import.meta.env.VITE_DEMO_MODE !== 'false'
+export const DEMO_MODE: boolean = !cloudEnabled && import.meta.env.VITE_DEMO_MODE !== 'false'

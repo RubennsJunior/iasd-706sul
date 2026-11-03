@@ -1,4 +1,4 @@
-import type { AppUser, Department, Member, Position, Role } from '../../models'
+import type { AppUser, Department, DirectoryEntry, Member, Position, Role } from '../../models'
 import { DEMO_PASSWORD } from '../../config'
 import { buildMatrix, fullMatrix } from '../../models/permissions'
 
@@ -68,6 +68,8 @@ export function seedMembers(): Member[] {
     }
   })
 }
+
+export const seedDirectory = (): DirectoryEntry[] => seedMembers().map((m) => ({ id: m.id, fullName: m.fullName }))
 
 export function seedRoles(): Role[] {
   return [

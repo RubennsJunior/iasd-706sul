@@ -38,6 +38,8 @@ export interface FieldDef {
   min?: number
   max?: number
   emptyOption?: string
+  /** Mostra o valor, mas não deixa alterar. */
+  readOnly?: boolean
   showIf?(values: Values): boolean
   validate?(value: unknown, values: Values): string | undefined
   /** Controle próprio, para campos que não são simples (ex.: lista de itens). */

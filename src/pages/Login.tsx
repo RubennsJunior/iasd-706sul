@@ -10,13 +10,16 @@ import { DEMO_MODE, DEMO_PASSWORD } from '../config'
 
 const DEMO_EMAIL_DOMAIN = '@igreja.demo'
 import { useAuth } from '../contexts/AuthContext'
+import { cloudEnabled } from '../lib/firebase'
+import { sendReset } from '../lib/cloudSession'
+import { isValidEmail } from '../utils/misc'
 import { errorMessage } from '../contexts/ToastContext'
 import { useRoles, useUsers } from '../hooks/useData'
 import { Page } from '../layouts/PageMeta'
 
 /** Tela de login (`/entrar`), aberta em "Tem login?" na tela inicial. */
 export function LoginPage() {
-  const { user, login } = useAuth()
+  const { user, login, message } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const { items: users } = useUsers()
@@ -25,6 +28,7 @@ export function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
+  const [info, setInfo] = useState('')
 
   const from = (location.state as { from?: string } | null)?.from ?? '/'
   if (user) return <Navigate to={from} replace />
@@ -32,12 +36,27 @@ export function LoginPage() {
   const enter = async (mail: string, pass: string) => {
     setBusy(true)
     setError('')
+    setInfo('')
     try {
       await login(mail, pass)
-      navigate(from, { replace: true })
+      // na nuvem a tela segue sozinha quando o perfil carrega (o acesso pode ser recusado: conta sem perfil, inativa)
+      if (cloudEnabled) setBusy(false)
+      else navigate(from, { replace: true })
     } catch (e) {
       setError(errorMessage(e))
       setBusy(false)
+    }
+  }
+
+  const forgot = async () => {
+    setError('')
+    setInfo('')
+    if (!isValidEmail(email.trim())) return setError('Digite o seu e-mail acima para receber o link de nova senha.')
+    try {
+      await sendReset(email)
+      setInfo('Se este e-mail tem acesso, enviamos um link para criar uma nova senha. Confira também a caixa de spam.')
+    } catch (e) {
+      setError(errorMessage(e))
     }
   }
 
@@ -58,7 +77,7 @@ export function LoginPage() {
                 autoComplete="username"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="voce@igreja.demo"
+                placeholder={cloudEnabled ? "voce@exemplo.com" : "voce@igreja.demo"}
                 className={controlClass()}
               />
             </FieldWrapper>
@@ -72,15 +91,27 @@ export function LoginPage() {
                 className={controlClass()}
               />
             </FieldWrapper>
-            {error && (
+            {(error || message) && (
               <p role="alert" className="rounded-xl bg-red-50 px-3 py-2 text-sm font-medium text-red-700">
-                {error}
+                {error || message}
+              </p>
+            )}
+            {info && (
+              <p role="status" className="rounded-xl bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-800">
+                {info}
               </p>
             )}
             <Button type="submit" icon={LogIn} loading={busy} className="w-full">
               Entrar
             </Button>
           </form>
+          {cloudEnabled && (
+            <p className="mt-3 text-center text-sm">
+              <button type="button" onClick={() => void forgot()} className="font-semibold text-royal-600 hover:underline">
+                Esqueci minha senha
+              </button>
+            </p>
+          )}
           <p className="mt-4 text-center text-sm text-muted">
             Ainda não tem acesso?{' '}
             <Link to="/cadastro" className="font-semibold text-royal-600 hover:underline">

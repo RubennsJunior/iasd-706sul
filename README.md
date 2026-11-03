@@ -9,9 +9,9 @@ liturgia e controle de acesso. Um único código gera três formatos:
 | **PWA** | Mesmo site, instalável (Android, iOS, computador) e com abertura offline |
 | **APK** | Empacotado com Capacitor, usando a mesma interface mobile (barra inferior) |
 
-> **Etapa atual: dados no Firebase (Firestore), ainda com dados fictícios.** Os cadastros são sincronizados entre
-> aparelhos; se a nuvem não puder ser acessada, o sistema cai sozinho para o `localStorage` e avisa na tela
-> (veja [Firebase](#firebase)). Os nomes e dados são inventados; o nome exibido (provisório: **IASD 706 Sul**) fica em
+> **Etapa atual: nuvem com login (Firebase), ainda com dados fictícios.** O acesso é pelo Firebase Authentication
+> (e-mail e senha) e os cadastros ficam no Firestore, sincronizados entre aparelhos; se a nuvem não puder ser acessada,
+> o sistema cai sozinho para o `localStorage` e avisa na tela (veja [Firebase](#firebase)). Os nomes e dados são inventados; o nome exibido (provisório: **IASD 706 Sul**) fica em
 > `src/config.ts`; o logotipo é uma marca simplificada — troque pelo oficial em
 > `src/components/ui/Logo.tsx` e `public/icons/icon.svg` (depois rode `npm run icons`).
 
@@ -27,7 +27,8 @@ npm run preview    # serve o build em http://localhost:4173 (necessário para te
 
 ### Contas de demonstração
 
-Todas com a senha `123456` (a tela de login lista os perfis com entrada em um toque):
+**Só no modo local** (`VITE_DATA_BACKEND=local`, nos testes automatizados). Com a nuvem ligada o acesso é pelo Firebase
+Authentication e estas contas não existem. Todas com a senha `123456` (a tela de login lista os perfis com entrada em um toque):
 
 | Perfil | E-mail |
 | --- | --- |
@@ -104,23 +105,45 @@ Os dados ficam no **Firestore** do projeto `erp-igrejaadventista`, em `igrejas/i
   são enviadas quando a conexão volta.
 - **Primeira execução:** se a igreja ainda não tem dados na nuvem, o sistema grava os dados fictícios (uma única vez).
   Em *Configurações do Aplicativo* dá para restaurá-los, importar ou exportar um backup (exige conexão).
-- **Senhas:** na nuvem são gravadas como resumo PBKDF2-SHA256 com sal, nunca em texto aberto.
+- **Login:** Firebase Authentication (e-mail e senha). As senhas ficam no Firebase, nunca no Firestore. O perfil de cada
+  pessoa é o documento `users/<uid>` (perfil de acesso, situação e permissões personalizadas); a sessão continua
+  guardada no aparelho, inclusive sem internet. Cada pessoa troca a própria senha em *Minha conta* e, para as outras,
+  o administrador envia o e-mail de nova senha (a senha de outra pessoa não pode ser trocada pelo navegador).
+- **Primeiro administrador:** a conta `admin@admin.com` (criada no Firebase Authentication) ganha o perfil de
+  administrador ao entrar pela primeira vez; ao entrar, o administrador também grava os dados de exemplo (se a igreja
+  ainda não tem nenhum) e acerta o diretório público de nomes. As contas de demonstração antigas (`@igreja.demo`) não
+  funcionam na nuvem: exclua-as em *Usuários*. **Troque a senha da conta de administrador** em *Minha conta* (um aviso
+  fica na tela até isso). Para usar outro e-mail, mude-o em `firestore.rules` e em `VITE_ADMIN_EMAIL`.
+- **Diretório de nomes:** a coleção `directory` guarda só o nome de cada membro (mesmo código). É o que o visitante e os
+  perfis sem acesso a *Membros* usam para ver quem está nas escalas, sem expor telefone, e-mail ou endereço.
 - **Analytics:** ligado só no site publicado (não no desenvolvimento nem no APK).
 - **Modo local automático:** se o Firestore recusar o acesso (regras), o banco não existir ou a nuvem não responder em
   10 segundos, a coleção passa a usar o `localStorage` e aparece um aviso vermelho "Modo local".
   `VITE_DATA_BACKEND=local` força esse modo.
 
-### Publicar as regras de segurança (obrigatório para a nuvem funcionar)
+### Regras de segurança (publique para valerem)
 
-Um projeto novo do Firestore bloqueia todo acesso. Publique o arquivo [`firestore.rules`](firestore.rules):
+O arquivo [`firestore.rules`](firestore.rules) só libera o que o perfil de quem está logado permite: o visitante lê eventos,
+escalas, equipes e nomes (e só envia pedidos de cadastro); cada pessoa logada precisa de um perfil `ativo` e as permissões
+vêm da mesma matriz módulo × (ver, cadastrar, editar, excluir, gerenciar) da tela de Permissões; só o administrador cria
+administradores e só quem tem *Permissões* mexe em permissões personalizadas. Publique-o:
 
 - pelo console: *Firebase → Firestore Database → Regras* → cole o conteúdo → **Publicar**; ou
 - pela linha de comando: `npx firebase-tools login` e depois `npx firebase-tools deploy --only firestore:rules`.
 
-> **Segurança.** O login do sistema é próprio (guardado na coleção `users`), então o Firestore não sabe quem está
-> acessando e as regras liberam as coleções da igreja para quem conhecer o endereço do sistema. Isso serve para a fase
-> de avaliação com dados fictícios. **Antes de cadastrar membros reais**: publique com `VITE_DEMO_MODE=false`, troque as
-> senhas das contas de demonstração e migre o login para o Firebase Authentication com regras por perfil.
+Enquanto as regras antigas (abertas) seguirem publicadas, o sistema funciona, mas **qualquer pessoa que conheça o endereço
+lê e grava os dados**. Depois de publicar as novas regras, quem não tem acesso a uma coleção vê a lista vazia e o servidor
+recusa gravações sem permissão (a tela avisa).
+
+**Testes das regras** (emulador do Firestore, precisa de Java 21): `cd tests/rules && npm install && npm test` — 48 testes
+cobrem visitante, Membro, Líder de Equipe, Secretaria, Administrador, usuário inativo, permissões personalizadas e o
+primeiro acesso do administrador. Para abrir o app contra os emuladores (Firestore e Authentication) em vez do projeto real,
+use `VITE_FIREBASE_EMULATOR=1` e `VITE_FIREBASE_PROJECT_ID=demo-igreja` (em `.env.local`) e `firebase emulators:start`.
+
+> **Limite conhecido:** gravações que o app faz em coleções de outros módulos como efeito de uma ação permitida (por exemplo,
+> aprovar um cadastro mexe em equipes) são liberadas por regras aproximadas, e um perfil com `escalas` pode alterar o campo
+> de integrantes de qualquer escala. Para uma igreja pequena é um bom ponto de partida; regras mais finas (por equipe ou
+> departamento) ficam para uma próxima etapa.
 
 ### Trocar a origem dos dados
 
@@ -130,7 +153,7 @@ fábrica; serviços e telas não mudam.
 
 Regras que hoje vivem nos serviços e precisarão ser garantidas também no servidor: exclusão em cascata de
 membros, sincronização líder ↔ equipe/departamento, detecção de conflito de escalas, proteção do último
-administrador. As permissões hoje escondem telas e botões; a validação no servidor virá com o Firebase Authentication.
+administrador. As permissões escondem telas e botões e as regras do Firestore as aplicam no servidor (veja acima).
 
 ## Publicar na Vercel
 
@@ -153,23 +176,34 @@ Voltar do Android fecha janelas e listas abertas, volta uma tela e só sai do ap
 (`src/components/NativeBackButton.tsx`, plugin `@capacitor/app`).
 
 ```bash
-npm run cap:sync    # build + copia o site para o projeto Android
-npm run cap:open    # abre no Android Studio (Build > Build APK)
-# ou, pela linha de comando, com JDK 21 e Android SDK instalados
-# (defina JAVA_HOME e ANDROID_HOME, ou crie android/local.properties com sdk.dir=...):
-npm run android:apk # gera android/app/build/outputs/apk/debug/app-debug.apk
+npm run build:apk               # APK de lançamento assinado: apk/iasd-706-sul-<versão>.apk (e apk/iasd-706-sul.apk)
+npm run build:apk -- --debug    # APK de teste (depurável): apk/iasd-706-sul-<versão>-debug.apk
+npm run cap:sync                # só build + copia o site para o projeto Android
+npm run cap:open                # abre no Android Studio
 ```
 
-Antes de publicar: troque `appId` em `capacitor.config.ts` e assine o APK/AAB com sua chave. Para regerar
-ícone e splash depois de trocar o logotipo: `npm run icons` e `npx @capacitor/assets generate --android`.
+O APK é gerado como no projeto ERP_Controle_Produção (`scripts/build-apk.mjs`): a **versão vem do `package.json`** (hoje
+**1.0.0**; o `versionCode` é `major×10000 + minor×100 + patch`, então 1.0.0 vira 10000 e um APK mais novo sempre atualiza o
+instalado), o arquivo leva a versão no nome e há uma cópia de **nome fixo** (`apk/iasd-706-sul.apk`, o mesmo arquivo). Em
+`apk/` fica só o da versão atual (os antigos continuam no histórico do Git) e o de teste sai à parte, sem mexer nesses. Para
+lançar uma versão nova, mude `version` no `package.json` (e `APP_VERSION` em `src/config.ts`) e rode `npm run build:apk`.
+
+Pré-requisitos: JDK 21 e Android SDK (o script usa `~/android-tools/jdk-21` e `~/android-tools/android-sdk` quando existem;
+senão `JAVA_HOME` e `ANDROID_HOME`). A **assinatura** usa uma chave criada na primeira vez em `~/.techsoft/iasd706sul.keystore`
+(com a senha em `iasd706sul.keystore.senha`), **fora do repositório**. **Guarde esses dois arquivos**: sem eles não é possível
+atualizar o app já instalado. Instalar no aparelho: `adb install -r apk/iasd-706-sul-<versão>.apk` (um app instalado com
+outra assinatura, como o APK de teste, precisa ser desinstalado antes).
+
+Antes de publicar em loja: troque `appId` em `capacitor.config.ts` (e `applicationId` em `android/app/build.gradle`) pelo
+definitivo. Para regerar ícone e splash depois de trocar o logotipo: `npm run icons` e `npx @capacitor/assets generate --android`.
 
 ## Limitações conhecidas desta etapa
 
 - Sem as regras publicadas (ou sem rede na primeira abertura) os dados ficam só no aparelho, no modo local.
-- Login e permissões ainda são do próprio sistema, sem Firebase Authentication: as regras do Firestore não distinguem
-  usuários (veja o aviso de segurança acima). As telas do visitante e o cadastro público leem e gravam nas mesmas
-  coleções; com regras por perfil, essas rotas precisarão de regras públicas próprias (com limite de envios) e o
-  visitante não deve receber nomes de integrantes sem regra definida pela igreja.
+- O cadastro público (visitante) aceita qualquer pedido que siga o formato; não há limite de envios (isso exigiria o App Check
+  do Firebase). O visitante enxerga eventos, escalas, equipes e os **nomes** dos membros (diretório); nenhum outro dado pessoal.
+- Excluir um usuário apaga o perfil dele (o acesso some), mas a conta continua no Firebase Authentication e o e-mail fica
+  reservado: para reaproveitá-lo, apague a conta no console do Firebase (*Authentication → Usuários*). Prefira marcar como inativo.
 - Os campos de data e hora (`<input type="date">`) abrem o seletor do próprio navegador/Android, que não aceita estilo.
 - Permissões valem por módulo; ainda não há restrição por equipe ou departamento do líder.
 - Conflito de escala compara dia e horário de início iguais (não há duração).
