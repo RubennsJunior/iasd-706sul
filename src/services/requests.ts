@@ -31,7 +31,8 @@ const base = createCrudService<MemberRequest>(repos.requests, {
       throw new Error('Informe o nome completo (nome e sobrenome).')
     }
     if (digits(data.phone ?? '').length < 10) throw new Error('Informe um telefone com DDD.')
-    if (data.email && !isValidEmail(data.email)) throw new Error('Informe um e-mail válido.')
+    if (!data.email?.trim()) throw new Error('Informe o e-mail de contato.')
+    if (!isValidEmail(data.email)) throw new Error('Informe um e-mail válido.')
     const pending = (await repos.requests.list()).filter((r) => r.status === 'pendente')
     const sameEmail = data.email && pending.some((r) => r.email && normalize(r.email) === normalize(data.email ?? ''))
     const samePhone = pending.some((r) => digits(r.phone) === digits(data.phone ?? ''))

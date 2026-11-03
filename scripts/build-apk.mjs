@@ -1,18 +1,18 @@
 /*
- * Gera o APK do aplicativo do mesmo jeito do ERP_Controle_Produção: release assinado, com a versão no nome,
- * uma cópia de nome fixo e a chave de assinatura guardada fora do repositório (~/.techsoft/).
+ * Gera o APK do aplicativo do mesmo jeito do ERP_Controle_Produção: release assinado, com a versão no nome e a
+ * chave de assinatura guardada fora do repositório (~/.techsoft/).
  *
  * Uso: node scripts/build-apk.mjs [--debug]        (npm run build:apk)
- *   --debug  gera um APK de teste (depurável), em apk/iasd-706-sul-<versão>-debug.apk, sem mexer nos demais
+ *   --debug  gera um APK de teste (depurável), em apk/iasd-<versão>-debug.apk, sem mexer no APK de lançamento
  *
- * Versão: vem do package.json. O versionCode segue a conta major*10000 + minor*100 + patch (1.0.0 -> 10000),
+ * Versão: vem do package.json. O versionCode segue a conta major*10000 + minor*100 + patch (1.0.1 -> 10001),
  * então um APK mais novo sempre atualiza o instalado.
  *
  * Pré-requisitos: JDK 21 e Android SDK. Usa ~/android-tools/jdk-21 e ~/android-tools/android-sdk quando existem;
  * senão, JAVA_HOME e ANDROID_HOME.
  *
- * Resultado: apk/iasd-706-sul-<versão>.apk (nome com a versão, para guardar e enviar) e apk/iasd-706-sul.apk
- * (nome fixo, a mesma cópia). Em apk/ fica só o APK da versão atual; os antigos continuam no histórico do Git.
+ * Resultado: um único arquivo, no padrão apk/iasd-<versão>.apk (ex.: apk/iasd-1.0.1.apk). Em apk/ fica só o APK da
+ * versão atual; os antigos continuam no histórico do Git.
  */
 import { execFileSync } from 'node:child_process'
 import { randomBytes } from 'node:crypto'
@@ -27,7 +27,7 @@ const apkDir = join(root, 'apk')
 const windows = platform() === 'win32'
 const debug = process.argv.includes('--debug')
 
-const NOME = 'iasd-706-sul'
+const NOME = 'iasd'
 const ALIAS = 'iasd706sul'
 
 const { version } = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'))
@@ -42,7 +42,7 @@ if (!javaHome || !sdk) {
   process.exit(1)
 }
 
-const nomes = { versionado: `${NOME}-${version}${debug ? '-debug' : ''}.apk`, ultimo: `${NOME}.apk` }
+const nome = `${NOME}-${version}${debug ? '-debug' : ''}.apk`
 
 function run(command, args, options = {}) {
   console.log(`> ${command.split(/[\\/]/).pop()} ${args.slice(0, 3).join(' ')} ...`)
@@ -86,22 +86,21 @@ if (!existsSync(saida)) {
   process.exit(1)
 }
 mkdirSync(apkDir, { recursive: true })
-copyFileSync(saida, join(apkDir, nomes.versionado))
+copyFileSync(saida, join(apkDir, nome))
 if (!debug) {
-  copyFileSync(saida, join(apkDir, nomes.ultimo))
-  // deixa só o APK da versão atual (e tira o antigo de teste, de antes deste script)
-  for (const nome of readdirSync(apkDir)) {
-    if ((/^iasd-706-sul-\d+\.\d+\.\d+\.apk$/.test(nome) && nome !== nomes.versionado) || nome === 'IASD706Sul-debug.apk') rmSync(join(apkDir, nome))
+  // deixa um único APK em apk/: apaga versões antigas e os nomes antigos (iasd-706-sul*, IASD706Sul-debug.apk)
+  for (const arquivo of readdirSync(apkDir)) {
+    if (arquivo.toLowerCase().endsWith('.apk') && arquivo !== nome) rmSync(join(apkDir, arquivo))
   }
 }
 
 // 4. Confere assinatura e versão do que foi gerado
 const buildTools = join(sdk, 'build-tools')
 const maisNova = readdirSync(buildTools).sort().at(-1)
-const apk = join(apkDir, nomes.versionado)
+const apk = join(apkDir, nome)
 if (!debug) {
   const signer = join(buildTools, maisNova, windows ? 'apksigner.bat' : 'apksigner')
   if (windows) run('cmd.exe', ['/c', signer, 'verify', '--print-certs', apk], { env })
   else run(signer, ['verify', '--print-certs', apk], { env })
 }
-console.log(`\nAPK ${debug ? 'de teste ' : ''}pronto: apk/${nomes.versionado}${debug ? '' : ` (e apk/${nomes.ultimo})`} — versão ${version}, versionCode ${versionCode}`)
+console.log(`\nAPK ${debug ? 'de teste ' : ''}pronto: apk/${nome} — versão ${version}, versionCode ${versionCode}`)

@@ -3,6 +3,7 @@ import { repos, resetAllData, exportAllData, importAllData } from '../repositori
 import { buildMatrix, effectivePermissions, hasPermission } from '../models/permissions'
 import {
   departmentsService,
+  ensureMemberForUser,
   eventPhase,
   eventsService,
   findRosterConflicts,
@@ -107,6 +108,36 @@ describe('usuários e perfis', () => {
     expect(resolveMember({ ...user, memberId: undefined, name: 'Outra Pessoa', email: 'ana.souza@exemplo.com.br' }, members)?.fullName).toBe('Ana Souza')
     expect(resolveMember({ ...user, memberId: undefined, name: 'Pessoa Sem Cadastro', email: 'x@y.com' }, members)).toBeNull()
     expect(resolveMember(null, members)).toBeNull()
+  })
+
+  it('garante um cadastro de membro para todo usuário criado', async () => {
+    const members = await repos.members.list()
+    const chosen = members.find((m) => m.fullName === 'Ana Souza')!
+    await expect(
+      ensureMemberForUser({ name: 'Outro Nome', email: 'outro@exemplo.com', memberId: chosen.id }, members),
+    ).resolves.toEqual({ memberId: chosen.id, created: false })
+
+    // sem escolha: reconhece o membro existente pelo e-mail
+    await expect(ensureMemberForUser({ name: 'Ana Souza', email: 'ana.souza@exemplo.com.br' })).resolves.toEqual({
+      memberId: chosen.id,
+      created: false,
+    })
+
+    // sem membro correspondente: cria um com os dados do usuário
+    const created = await ensureMemberForUser({
+      name: 'Novo Usuário Teste',
+      email: 'novo.usuario@exemplo.com',
+      phone: '(11) 99999-0000',
+      birthDate: '1990-05-20',
+    })
+    expect(created.created).toBe(true)
+    expect(await repos.members.get(created.memberId)).toMatchObject({
+      fullName: 'Novo Usuário Teste',
+      email: 'novo.usuario@exemplo.com',
+      phone: '(11) 99999-0000',
+      birthDate: '1990-05-20',
+      status: 'ativo',
+    })
   })
 
   it('permissões personalizadas valem no lugar das do perfil', async () => {
@@ -334,6 +365,7 @@ describe('solicitações de cadastro', () => {
   it('valida os dados e barra pedidos duplicados em análise', async () => {
     await expect(requestsService.submit({ ...input, fullName: 'Camila' })).rejects.toThrow(/nome completo/i)
     await expect(requestsService.submit({ ...input, phone: '123' })).rejects.toThrow(/telefone/i)
+    await expect(requestsService.submit({ ...input, email: '' })).rejects.toThrow(/e-mail/i)
     await expect(requestsService.submit({ ...input, email: 'sem-arroba' })).rejects.toThrow(/e-mail/i)
     await requestsService.submit(input)
     await expect(requestsService.submit({ ...input, email: 'outro@exemplo.com.br' })).rejects.toThrow(/em análise/)

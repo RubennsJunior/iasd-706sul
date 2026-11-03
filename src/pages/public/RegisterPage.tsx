@@ -12,7 +12,15 @@ export function RegisterPage() {
   const fields: FieldDef[] = [
     { name: 'fullName', label: 'Nome completo', type: 'text', required: true, span: 2, section: 'Seus dados', hint: 'Nome e sobrenome.' },
     { name: 'phone', label: 'Telefone / WhatsApp', type: 'tel', required: true, placeholder: '(00) 00000-0000', section: 'Seus dados' },
-    { name: 'email', label: 'E-mail (opcional)', type: 'email', placeholder: 'nome@exemplo.com', section: 'Seus dados' },
+    {
+      name: 'email',
+      label: 'E-mail',
+      type: 'email',
+      required: true,
+      placeholder: 'nome@exemplo.com',
+      hint: 'Usamos este e-mail para entrar em contato com você.',
+      section: 'Seus dados',
+    },
     {
       name: 'birthDate',
       label: 'Data de nascimento',

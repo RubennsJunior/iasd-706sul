@@ -48,9 +48,10 @@ dados fictícios. Para esconder a lista de contas e o "Testar outro perfil" (ant
 
 - **Entrada (sem login)** — a tela inicial (`/login`) oferece **Entrar como visitante**, **Fazer meu cadastro** e
   **Tem login?** (abre `/entrar`). O visitante vê só os eventos (datas) e as escalas das equipes, com busca pelo
-  próprio nome. O cadastro público cria uma **solicitação de membro** (não um usuário), com escolha das equipes de
-  interesse; a secretaria e a liderança analisam em **Cadastros → Solicitações de Cadastro**: aprovar cria o
-  membro e o coloca nas equipes confirmadas, recusar exige o motivo. Pedidos novos geram notificação e aviso no Início.
+  próprio nome. O cadastro público cria uma **solicitação de membro** (não um usuário), com **e-mail obrigatório** e
+  escolha das equipes de interesse; a secretaria e a liderança analisam em **Cadastros → Solicitações de Cadastro**:
+  aprovar cria o membro e o coloca nas equipes confirmadas, recusar exige o motivo. Pedidos novos geram notificação e
+  aviso no Início.
 - **Início** — indicadores, próximo evento, minha semana, ações rápidas, minha próxima escala (com confirmação),
   próximos cultos, escalas da igreja e atividades recentes.
 - **Eventos** — filtros (todos, próximos, este mês, realizados, cancelados), busca, cadastro/edição/exclusão,
@@ -63,8 +64,9 @@ dados fictícios. Para esconder a lista de contas e o "Testar outro perfil" (ant
   Visualizar (janela de detalhes). Os cadastros genéricos usam `CrudPage` + `FormPage`.
 - **Cadastro de usuário** — tela com abas **Dados** (informações pessoais e acesso) e **Permissão** (perfil de acesso e,
   opcionalmente, permissões personalizadas módulo a módulo para aquele usuário). Clicar numa linha ou card da lista
-  abre a edição direto, sem janela de prévia. O membro do usuário (para "minhas escalas" e "minhas equipes") é
-  reconhecido sozinho pelo e-mail ou pelo nome.
+  abre a edição direto, sem janela de prévia. No cadastro novo, **"Aproveitar cadastro de membro"** preenche os dados a
+  partir de um membro que ainda não tem usuário. Todo usuário criado manualmente também ganha (ou é vinculado a) um
+  cadastro de membro, usado em "minhas escalas" e "minhas equipes".
 - **Menu administrativo** — Cadastros (membros, usuários, equipes, líderes, cargos, departamentos),
   Gerenciamento (eventos, **escalas**, cultos e programações, liturgias, participantes),
   Administração (perfis, permissões, notificações, relatórios) e Configurações.
@@ -178,22 +180,22 @@ Voltar do Android fecha janelas e listas abertas, volta uma tela e só sai do ap
 (`src/components/NativeBackButton.tsx`, plugin `@capacitor/app`).
 
 ```bash
-npm run build:apk               # APK de lançamento assinado: apk/iasd-706-sul-<versão>.apk (e apk/iasd-706-sul.apk)
-npm run build:apk -- --debug    # APK de teste (depurável): apk/iasd-706-sul-<versão>-debug.apk
+npm run build:apk               # APK de lançamento assinado: apk/iasd-<versão>.apk (ex.: apk/iasd-1.0.1.apk)
+npm run build:apk -- --debug    # APK de teste (depurável): apk/iasd-<versão>-debug.apk
 npm run cap:sync                # só build + copia o site para o projeto Android
 npm run cap:open                # abre no Android Studio
 ```
 
 O APK é gerado como no projeto ERP_Controle_Produção (`scripts/build-apk.mjs`): a **versão vem do `package.json`** (hoje
-**1.0.0**; o `versionCode` é `major×10000 + minor×100 + patch`, então 1.0.0 vira 10000 e um APK mais novo sempre atualiza o
-instalado), o arquivo leva a versão no nome e há uma cópia de **nome fixo** (`apk/iasd-706-sul.apk`, o mesmo arquivo). Em
-`apk/` fica só o da versão atual (os antigos continuam no histórico do Git) e o de teste sai à parte, sem mexer nesses. Para
-lançar uma versão nova, mude `version` no `package.json` (e `APP_VERSION` em `src/config.ts`) e rode `npm run build:apk`.
+**1.0.1**; o `versionCode` é `major×10000 + minor×100 + patch`, então 1.0.1 vira 10001 e um APK mais novo sempre atualiza o
+instalado). Sai um **único arquivo**, no padrão `iasd-<versão>.apk`. Em `apk/` fica só o da versão atual (os antigos
+continuam no histórico do Git) e o de teste sai à parte, sem mexer no de lançamento. Para lançar uma versão nova, mude
+`version` no `package.json` (e `APP_VERSION` em `src/config.ts`) e rode `npm run build:apk`.
 
 Pré-requisitos: JDK 21 e Android SDK (o script usa `~/android-tools/jdk-21` e `~/android-tools/android-sdk` quando existem;
 senão `JAVA_HOME` e `ANDROID_HOME`). A **assinatura** usa uma chave criada na primeira vez em `~/.techsoft/iasd706sul.keystore`
 (com a senha em `iasd706sul.keystore.senha`), **fora do repositório**. **Guarde esses dois arquivos**: sem eles não é possível
-atualizar o app já instalado. Instalar no aparelho: `adb install -r apk/iasd-706-sul-<versão>.apk` (um app instalado com
+atualizar o app já instalado. Instalar no aparelho: `adb install -r apk/iasd-<versão>.apk` (um app instalado com
 outra assinatura, como o APK de teste, precisa ser desinstalado antes).
 
 Antes de publicar em loja: troque `appId` em `capacitor.config.ts` (e `applicationId` em `android/app/build.gradle`) pelo

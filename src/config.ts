@@ -4,7 +4,7 @@ import { cloudEnabled } from './lib/firebase'
 export const CHURCH_NAME = 'IASD 706 Sul'
 
 export const APP_NAME = CHURCH_NAME
-export const APP_VERSION = '1.0.0'
+export const APP_VERSION = '1.0.1'
 export const APP_BUILD = 'Etapa 3 — nuvem com login (Firebase)'
 
 /**

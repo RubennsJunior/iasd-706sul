@@ -141,6 +141,33 @@ export function resolveMember(user: AppUser | null | undefined, members: Member[
   )
 }
 
+/**
+ * Garante que todo usuário tenha um cadastro de membro: usa o membro escolhido na tela, reconhece um já existente
+ * pelo e-mail/nome ou cria um novo com os dados do usuário. Devolve o vínculo e se o membro acabou de ser criado
+ * (para desfazer caso a criação do acesso falhe).
+ */
+export async function ensureMemberForUser(
+  user: Partial<AppUser> & Pick<AppUser, 'name' | 'email'>,
+  members?: Member[],
+): Promise<{ memberId: ID; created: boolean }> {
+  const list = members ?? (await repos.members.list())
+  const chosen = user.memberId ? list.find((member) => member.id === user.memberId) : undefined
+  if (chosen) return { memberId: chosen.id, created: false }
+  const existing = resolveMember({ ...user, id: user.id ?? '' } as AppUser, list)
+  if (existing) return { memberId: existing.id, created: false }
+  const member = await membersService.create({
+    fullName: user.name.trim(),
+    birthDate: user.birthDate ?? '',
+    phone: user.phone ?? '',
+    email: user.email.trim(),
+    address: '',
+    baptismDate: '',
+    status: 'ativo',
+    notes: '',
+  })
+  return { memberId: member.id, created: true }
+}
+
 /** Regras do cadastro de usuário; a tela também as usa antes de criar o acesso no Firebase (para não deixar acesso órfão). */
 export async function validateUser(data: Partial<NewEntity<AppUser>>, existing?: AppUser) {
   if (data.email && !isValidEmail(data.email)) throw new Error('Informe um e-mail válido.')

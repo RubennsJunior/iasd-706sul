@@ -5,6 +5,7 @@ import { PermissionMatrixEditor } from '../../components/admin/PermissionMatrixE
 import { Switch } from '../../components/forms/Controls'
 import { FormPage } from '../../components/forms/FormPage'
 import type { FormTab } from '../../components/forms/FormPage'
+import { Select } from '../../components/forms/Select'
 import type { FieldDef, Values } from '../../components/forms/types'
 import { Avatar } from '../../components/ui/Avatar'
 import { Button } from '../../components/ui/Button'
@@ -12,12 +13,12 @@ import { Badge, StatusBadge } from '../../components/ui/Badge'
 import { Card } from '../../components/ui/Card'
 import { useAuth } from '../../contexts/AuthContext'
 import { useToast } from '../../contexts/ToastContext'
-import { useMembers, useRoles } from '../../hooks/useData'
+import { useMembers, useRoles, useUsers } from '../../hooks/useData'
 import { cloudEnabled } from '../../lib/firebase'
 import { createLoginFor, sendReset } from '../../lib/cloudSession'
 import { MODULES } from '../../models'
 import type { AppUser, NewEntity, PermissionMatrix, Role, UserStatus } from '../../models'
-import { resolveMember, usersService, validateUser } from '../../services'
+import { ensureMemberForUser, membersService, usersService, validateUser } from '../../services'
 import { formatDate, todayISO } from '../../utils/date'
 import { USER_STATUS_OPTIONS } from '../../utils/labels'
 
@@ -148,11 +149,56 @@ export function UserFormPage({ item, backTo }: { item?: AppUser; backTo: string 
   const { can } = useAuth()
   const { items: roles } = useRoles()
   const { items: members } = useMembers()
+  const { items: users } = useUsers()
   const [params] = useSearchParams()
   const canCustomize = can('permissoes', 'edit')
 
+  // Membros que ainda não têm usuário: são os que podem ser aproveitados no cadastro.
+  const availableMembers = useMemo(() => {
+    const linked = new Set(users.map((user) => user.memberId).filter((id): id is string => Boolean(id)))
+    return members.filter((member) => !linked.has(member.id))
+  }, [members, users])
+
   const fields = useMemo<FieldDef[]>(
     () => [
+      {
+        name: 'memberId',
+        label: 'Aproveitar cadastro de membro',
+        type: 'custom',
+        span: 2,
+        tab: 'dados',
+        section: 'Informações pessoais',
+        showIf: () => !item,
+        hint: availableMembers.length
+          ? 'Escolha um membro já cadastrado para preencher os dados abaixo. O usuário ficará vinculado a ele.'
+          : 'Todos os membros já têm um usuário. Preencha os dados para cadastrar um novo usuário e o membro correspondente.',
+        render: ({ value, setValues }) => (
+          <Select
+            value={String(value ?? '')}
+            placeholder="Cadastrar usuário do zero"
+            emptyOption="Cadastrar usuário do zero"
+            searchable
+            options={availableMembers.map((member) => ({
+              value: member.id,
+              label: member.email ? `${member.fullName} — ${member.email}` : member.fullName,
+            }))}
+            onChange={(id) => {
+              const member = availableMembers.find((m) => m.id === id)
+              setValues(
+                member
+                  ? {
+                      memberId: member.id,
+                      name: member.fullName,
+                      email: member.email ?? '',
+                      phone: member.phone ?? '',
+                      birthDate: member.birthDate ?? '',
+                    }
+                  : { memberId: '' },
+              )
+            }}
+          />
+        ),
+      },
       { name: 'name', label: 'Nome completo', type: 'text', required: true, span: 2, tab: 'dados', section: 'Informações pessoais' },
       {
         name: 'email',
@@ -242,12 +288,13 @@ export function UserFormPage({ item, backTo }: { item?: AppUser; backTo: string 
         ),
       },
     ],
-    [roles, canCustomize, item],
+    [roles, canCustomize, item, availableMembers],
   )
 
   const initialValues: Values = item
     ? {
         ...item,
+        memberId: item.memberId ?? '',
         birthDate: item.birthDate ?? '',
         notes: item.notes ?? '',
         // a senha atual nunca volta para a tela; em branco significa "manter"
@@ -256,6 +303,7 @@ export function UserFormPage({ item, backTo }: { item?: AppUser; backTo: string 
         customEnabled: Boolean(item.customPermissions),
       }
     : {
+        memberId: '',
         name: '',
         email: '',
         phone: '',
@@ -281,17 +329,34 @@ export function UserFormPage({ item, backTo }: { item?: AppUser; backTo: string 
       status: values.status as UserStatus,
       customPermissions: custom ? (values.customPermissions as PermissionMatrix) : undefined,
     }
+    // todo usuário também é um membro: aproveita o escolhido, reconhece um existente ou cria o cadastro
+    await validateUser(payload, item)
+    const link = await ensureMemberForUser(
+      { ...payload, memberId: String(values.memberId ?? '').trim() || item?.memberId },
+      members,
+    )
     if (cloudEnabled) {
-      if (item) await usersService.update(item.id, payload)
+      if (item) await usersService.update(item.id, { ...payload, memberId: link.memberId })
       else {
-        // regras de negócio primeiro: o acesso no Firebase só é criado se o cadastro for aceito
-        await validateUser(payload)
-        const uid = await createLoginFor(payload.email, String(values.password))
-        const linked = resolveMember({ name: payload.name, email: payload.email } as AppUser, members)
-        await usersService.create({ ...payload, id: uid, memberId: linked?.id } as NewEntity<AppUser>)
+        // o membro já existe; o acesso no Firebase só é criado se o cadastro for aceito
+        let uid: string
+        try {
+          uid = await createLoginFor(payload.email, String(values.password))
+        } catch (error) {
+          if (link.created) await membersService.remove(link.memberId)
+          throw error
+        }
+        await usersService.create({ ...payload, id: uid, memberId: link.memberId } as NewEntity<AppUser>)
       }
-    } else if (item) await usersService.update(item.id, values.password ? { ...payload, password: String(values.password) } : payload)
-    else await usersService.create({ ...payload, password: String(values.password) })
+    } else if (item) {
+      await usersService.update(item.id, {
+        ...payload,
+        memberId: link.memberId,
+        ...(values.password ? { password: String(values.password) } : {}),
+      })
+    } else {
+      await usersService.create({ ...payload, memberId: link.memberId, password: String(values.password) })
+    }
     toast.success(item ? 'Usuário atualizado com sucesso.' : 'Usuário cadastrado com sucesso.')
   }
 
