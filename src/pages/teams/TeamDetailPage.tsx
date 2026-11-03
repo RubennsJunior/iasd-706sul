@@ -184,7 +184,7 @@ export function TeamDetailPage() {
                       <li key={memberId} className="flex items-center gap-3 px-3 py-2.5">
                         <Avatar name={person?.fullName ?? '?'} size="sm" />
                         <span className="min-w-0 flex-1">
-                          <span className="block truncate text-sm font-medium text-ink">{person?.fullName ?? '—'}</span>
+                          <span className="block wrap-anywhere text-sm font-medium text-ink">{person?.fullName ?? '—'}</span>
                           {person?.phone && <span className="block text-xs text-muted">{person.phone}</span>}
                         </span>
                         {team.leaderId === memberId && (
@@ -222,7 +222,7 @@ export function TeamDetailPage() {
                   <div key={l.id} className="flex items-center gap-3 px-4 py-3">
                     <Avatar name={nameOf(l.memberId)} size="sm" />
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-ink">{nameOf(l.memberId)}</p>
+                      <p className="wrap-anywhere text-sm font-medium text-ink">{nameOf(l.memberId)}</p>
                       <p className="text-xs text-muted">{positions.find((p) => p.id === l.positionId)?.name}</p>
                     </div>
                   </div>

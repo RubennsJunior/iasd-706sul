@@ -39,7 +39,7 @@ export function MenuPage() {
                         {label}
                         {badge === 'requests' && <PendingBadge />}
                       </span>
-                      <span className="block truncate text-sm text-muted">{description}</span>
+                      <span className="block wrap-anywhere text-sm text-muted">{description}</span>
                     </span>
                     <ChevronRight className="size-5 shrink-0 text-royal-600" />
                   </Link>

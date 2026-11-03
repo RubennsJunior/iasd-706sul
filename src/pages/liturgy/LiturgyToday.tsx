@@ -69,7 +69,7 @@ export function LiturgyToday() {
                   <BookOpen className="size-5" /> Leitura Bíblica
                 </p>
                 <p className="text-lg font-semibold text-navy-900">{todays.reference}</p>
-                <p className="mt-1 line-clamp-3 font-script text-[15px] italic leading-snug text-ink">“{todays.text}”</p>
+                <p className="mt-1 font-script text-[15px] italic leading-snug text-ink">“{todays.text}”</p>
               </div>
               <ChevronRight className="size-5 shrink-0 text-royal-600" />
             </Card>
@@ -93,7 +93,7 @@ export function LiturgyToday() {
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="block text-[17px] font-semibold text-navy-900">{row.title}</span>
-                      <span className="block truncate text-ink">{row.subtitle}</span>
+                      <span className="block wrap-anywhere text-ink">{row.subtitle}</span>
                     </span>
                     <ChevronRight className="size-5 shrink-0 text-navy-900" />
                   </>
@@ -128,7 +128,7 @@ export function LiturgyToday() {
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block text-lg font-bold text-navy-900">Hino do Dia</span>
-                  <span className="block truncate text-ink">{hymnOfDay.title}</span>
+                  <span className="block wrap-anywhere text-ink">{hymnOfDay.title}</span>
                 </span>
                 <span className="mr-2 grid size-12 place-items-center rounded-full bg-navy-900 text-white" aria-hidden>
                   <BookOpen className="size-5" />

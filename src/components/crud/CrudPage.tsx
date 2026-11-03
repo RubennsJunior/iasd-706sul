@@ -258,11 +258,11 @@ export function CrudPage<T extends Entity>({
                       {view.leading}
                       <span className="min-w-0 flex-1">
                         <span className="flex items-start justify-between gap-2">
-                          <span className="font-semibold text-navy-900">{view.title}</span>
+                          <span className="min-w-0 wrap-anywhere font-semibold text-navy-900">{view.title}</span>
                           {view.badge}
                         </span>
-                        {view.subtitle && <span className="mt-0.5 block text-sm text-muted">{view.subtitle}</span>}
-                        {view.meta && <span className="mt-1.5 block text-xs text-muted">{view.meta}</span>}
+                        {view.subtitle && <span className="mt-0.5 block wrap-anywhere text-sm text-muted">{view.subtitle}</span>}
+                        {view.meta && <span className="mt-1.5 block wrap-anywhere text-xs text-muted">{view.meta}</span>}
                       </span>
                     </button>
                     {hasActions(item) && (

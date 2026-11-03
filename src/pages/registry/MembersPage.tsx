@@ -83,8 +83,8 @@ export function MembersPage() {
             <div className="flex items-center gap-3">
               <Avatar name={m.fullName} size="sm" />
               <div className="min-w-0">
-                <p className="truncate font-medium text-navy-900">{m.fullName}</p>
-                <p className="truncate text-xs text-muted">{m.email || 'Sem e-mail'}</p>
+                <p className="wrap-anywhere font-medium text-navy-900">{m.fullName}</p>
+                <p className="wrap-anywhere text-xs text-muted">{m.email || 'Sem e-mail'}</p>
               </div>
             </div>
           ),

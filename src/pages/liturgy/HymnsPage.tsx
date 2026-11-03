@@ -80,7 +80,7 @@ export function HymnsPage() {
                     {hymn.number}
                   </span>
                   <span className="min-w-0">
-                    <span className="block truncate font-semibold text-navy-900">{hymn.title}</span>
+                    <span className="block wrap-anywhere font-semibold text-navy-900">{hymn.title}</span>
                     <span className="flex items-center gap-1 text-sm text-muted">
                       <Music className="size-3.5" />
                       {hymn.category}

@@ -11,7 +11,7 @@ import type {
 } from '../models'
 import { seedRoles } from '../data/seed/people'
 import { MODULES } from '../models'
-import { permissionSet } from '../models/permissions'
+import { normalizeMatrix, permissionSet } from '../models/permissions'
 import { repos } from '../repositories'
 import { isValidEmail, normalize, pluralize } from '../utils/misc'
 import { createCrudService } from './crud'
@@ -227,6 +227,19 @@ export const rolesService = createCrudService<Role>(repos.roles, {
   label: 'Perfil',
   activityKind: 'perfil',
   nameOf: (r) => r.name,
+  async validate(data, existing) {
+    const name = String(data.name ?? '').trim()
+    if (!name) throw new Error('Informe o nome do perfil.')
+    const others = (await repos.roles.list()).filter((r) => r.id !== existing?.id)
+    if (others.some((r) => r.name.trim().toLowerCase() === name.toLowerCase())) {
+      throw new Error('Já existe um perfil com este nome.')
+    }
+    if (existing?.system) {
+      // o perfil do administrador sempre tem acesso total e vale para toda a igreja
+      const same = JSON.stringify(normalizeMatrix(data.permissions)) === JSON.stringify(normalizeMatrix(existing.permissions))
+      if (!same || (data.reach ?? 'todos') !== 'todos') throw new Error('O perfil de administrador não pode ter as permissões alteradas.')
+    }
+  },
   async beforeRemove(role) {
     if (role.system) throw new Error('O perfil de administrador não pode ser excluído.')
     const users = (await repos.users.list()).filter((u) => u.roleId === role.id)

@@ -102,7 +102,7 @@ export function TeamsPage() {
                         <span className="text-lg font-semibold leading-tight text-navy-900">{team.name}</span>
                         <StatusBadge kind="active" value={team.status} />
                       </span>
-                      <span className="block truncate text-sm text-ink">{team.description}</span>
+                      <span className="block wrap-anywhere text-sm text-ink">{team.description}</span>
                       <span className="flex flex-wrap gap-x-4 gap-y-0.5 pt-1 text-[13px] text-ink">
                         <span className="inline-flex items-center gap-1.5">
                           <UsersRound className="size-4 text-navy-800" />
@@ -110,7 +110,7 @@ export function TeamsPage() {
                         </span>
                         <span className="inline-flex min-w-0 items-center gap-1.5">
                           <UserRound className="size-4 shrink-0 text-navy-800" />
-                          <span className="truncate">Líder: {nameOf(team.leaderId)}</span>
+                          <span className="wrap-anywhere">Líder: {nameOf(team.leaderId)}</span>
                         </span>
                       </span>
                     </span>

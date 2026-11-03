@@ -49,7 +49,7 @@ function Readings({ header }: { header: ReactNode }) {
         { header: 'Data', sortValue: (r) => r.date, cell: (r) => formatDate(r.date) },
         { header: 'Referência', sortValue: (r) => r.reference, cell: (r) => <span className="font-medium text-navy-900">{r.reference}</span> },
         { header: 'Tema', cell: (r) => r.theme || '—' },
-        { header: 'Texto', cell: (r) => <span className="line-clamp-1 max-w-sm">{r.text}</span> },
+        { header: 'Texto', cell: (r) => <span className="max-w-sm">{r.text}</span> },
       ]}
       card={(r) => ({ title: r.reference, subtitle: r.theme || undefined, meta: `${formatDate(r.date)} • ${r.text}` })}
     />

@@ -94,7 +94,7 @@ export function ReadingCalendar() {
                   </span>
                   <span className="min-w-0">
                     <span className="block font-semibold text-navy-900">{r.reference}</span>
-                    <span className="block truncate text-sm text-muted">{r.theme}</span>
+                    <span className="block wrap-anywhere text-sm text-muted">{r.theme}</span>
                   </span>
                 </button>
               </li>

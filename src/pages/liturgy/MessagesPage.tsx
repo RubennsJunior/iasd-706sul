@@ -50,7 +50,7 @@ export function MessagesPage() {
                 <Card className="space-y-1.5 p-4 transition-shadow hover:shadow-float">
                   <Badge tone={m.kind === 'mensagem' ? 'info' : 'gold'}>{MESSAGE_KIND[m.kind]}</Badge>
                   <h3 className="text-lg font-semibold text-navy-900">{m.title}</h3>
-                  <p className="line-clamp-2 text-sm text-ink">{m.body}</p>
+                  <p className="text-sm text-ink">{m.body}</p>
                   <p className="text-xs text-muted">
                     {m.author} • {formatDate(m.date)}
                   </p>

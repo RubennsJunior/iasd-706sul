@@ -67,13 +67,17 @@ dados fictícios. Para esconder a lista de contas e o "Testar outro perfil" (ant
   abre a edição direto, sem janela de prévia. No cadastro novo, **"Aproveitar cadastro de membro"** preenche os dados a
   partir de um membro que ainda não tem usuário. Todo usuário criado manualmente também ganha (ou é vinculado a) um
   cadastro de membro, usado em "minhas escalas" e "minhas equipes".
-- **Menu administrativo** — Cadastros (membros, usuários, equipes, líderes, cargos, departamentos, patrimônio),
-  Gerenciamento (eventos, **escalas**, cultos e programações, liturgias, participantes),
-  Administração (perfis, permissões, notificações, relatórios) e Configurações.
+- **Menu administrativo** — Cadastros (usuários, **perfis de acesso**, membros, equipes e ministérios, líderes, cargos e
+  funções, departamentos, patrimônio, nessa ordem), Gerenciamento (eventos, **escalas**, cultos e programações,
+  liturgias, participantes), Administração (notificações, relatórios) e Configurações.
 - **Escalas** — montagem por equipe, vínculo opcional a evento/culto, aviso de **conflito de horário**,
   confirmação/recusa pelo próprio integrante e acompanhamento da liderança.
-- **Perfis e permissões** — seis perfis iniciais; cada um com matriz módulo × (visualizar, cadastrar, editar,
-  excluir, gerenciar), editável pelo administrador. Menus, botões e rotas respeitam as permissões.
+- **Perfis de acesso e permissões (uma tela só)** — em **Cadastros → Perfis de Acesso** o administrador cadastra perfis
+  novos e edita os existentes (seis vêm de fábrica): nome, descrição, abrangência, a matriz módulo × (visualizar,
+  cadastrar, editar, excluir, gerenciar) e a lista de usuários que usam o perfil. O nome do perfil é obrigatório e único;
+  o perfil do administrador não perde acesso. A escolha do perfil de cada pessoa (e as permissões personalizadas de uma só
+  pessoa) fica no **Cadastro de Usuários**, aba Permissão; o endereço antigo `/permissoes` leva à tela de perfis. No
+  celular a matriz vira um bloco por módulo, sem rolagem lateral. Menus, botões e rotas respeitam as permissões.
 - **Abrangência do perfil** — além de *o que* o perfil pode fazer, cada perfil define *em quais dados* vale:
   **toda a igreja** (padrão), **só o(s) departamento(s) do usuário** ou **só a(s) equipe(s) do usuário**. É aqui que
   **Departamentos, Equipes, Cargos e Funções e Líderes** passam a valer para o acesso: a pessoa (pelo membro vinculado ao
@@ -221,6 +225,9 @@ definitivo. Para regerar ícone e splash depois de trocar o logotipo: `npm run i
 - Excluir um usuário apaga o perfil dele (o acesso some), mas a conta continua no Firebase Authentication e o e-mail fica
   reservado: para reaproveitá-lo, apague a conta no console do Firebase (*Authentication → Usuários*). Prefira marcar como inativo.
 - Os campos de data e hora (`<input type="date">`) abrem o seletor do próprio navegador/Android, que não aceita estilo.
-- Permissões valem por módulo; ainda não há restrição por equipe ou departamento do líder.
+- Permissões valem por módulo; a restrição por equipe ou departamento é a **abrangência do perfil**, aplicada pelo app e não
+  pelas regras do Firestore (veja *Abrangência do perfil*).
+- Textos longos (nomes, e-mails, títulos) quebram em mais linhas em vez de ficar cortados; os campos de texto crescem com o
+  conteúdo (Enter envia o formulário).
 - Conflito de escala compara dia e horário de início iguais (não há duração).
 - Hinos e leituras são exemplos curtos; insira conteúdo com direitos de uso adequados.

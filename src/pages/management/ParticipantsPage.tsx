@@ -188,8 +188,8 @@ export function ParticipantsPage() {
                   <Card className="flex items-center gap-3 p-3.5">
                     <Avatar name={nameOf(r.memberId)} />
                     <div className="min-w-0 flex-1">
-                      <p className="truncate font-semibold text-navy-900">{nameOf(r.memberId)}</p>
-                      <Link to={`/eventos/${r.eventId}`} className="block truncate text-sm text-royal-600">
+                      <p className="wrap-anywhere font-semibold text-navy-900">{nameOf(r.memberId)}</p>
+                      <Link to={`/eventos/${r.eventId}`} className="block wrap-anywhere text-sm text-royal-600">
                         {r.eventTitle} • {formatDateShort(r.eventDate)}
                       </Link>
                       <div className="mt-1.5">{statusControl(r)}</div>

@@ -79,8 +79,8 @@ export function AccountButton({ showName, className }: { showName?: boolean; cla
         <div className="flex items-center gap-3">
           <Avatar name={user.name} size="lg" />
           <div className="min-w-0">
-            <p className="truncate font-semibold text-navy-900">{user.name}</p>
-            <p className="truncate text-sm text-muted">{user.email}</p>
+            <p className="wrap-anywhere font-semibold text-navy-900">{user.name}</p>
+            <p className="wrap-anywhere text-sm text-muted">{user.email}</p>
             <p className="text-xs font-semibold text-royal-600">{role?.name}</p>
           </div>
         </div>
@@ -107,7 +107,7 @@ export function AccountButton({ showName, className }: { showName?: boolean; cla
                     >
                       <Avatar name={u.name} size="sm" />
                       <span className="min-w-0 flex-1">
-                        <span className="block truncate text-sm font-medium text-ink">{u.name}</span>
+                        <span className="block wrap-anywhere text-sm font-medium text-ink">{u.name}</span>
                         <span className="block text-xs text-muted">{roles.find((r) => r.id === u.roleId)?.name}</span>
                       </span>
                       {u.id === user.id && <span className="text-xs font-semibold text-royal-600">Atual</span>}

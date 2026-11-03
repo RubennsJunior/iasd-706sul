@@ -243,8 +243,8 @@ export function HomePage() {
                     <Link to={item.to} className="flex items-center gap-3 py-3">
                       <DateChip date={item.date} />
                       <span className="min-w-0 flex-1">
-                        <span className="block truncate text-[17px] font-semibold text-navy-900">{item.title}</span>
-                        <span className="block truncate text-sm text-ink">
+                        <span className="block wrap-anywhere text-[17px] font-semibold text-navy-900">{item.title}</span>
+                        <span className="block wrap-anywhere text-sm text-ink">
                           {formatTime(item.time)} • {item.place}
                         </span>
                       </span>
@@ -341,8 +341,8 @@ export function HomePage() {
                   <li key={s.id} className="flex items-center gap-3">
                     <DateChip date={s.date} className="size-12 text-[11px]" />
                     <span className="min-w-0">
-                      <span className="block truncate text-sm font-semibold text-navy-900">{s.title}</span>
-                      <span className="block truncate text-xs text-muted">
+                      <span className="block wrap-anywhere text-sm font-semibold text-navy-900">{s.title}</span>
+                      <span className="block wrap-anywhere text-xs text-muted">
                         {formatTime(s.time)} • {s.location}
                       </span>
                     </span>
@@ -362,7 +362,7 @@ export function HomePage() {
                   return (
                     <li key={r.id}>
                       <div className="flex items-baseline justify-between gap-2 text-sm">
-                        <span className="truncate font-semibold text-navy-900">{r.title}</span>
+                        <span className="wrap-anywhere font-semibold text-navy-900">{r.title}</span>
                         <span className="shrink-0 text-xs text-muted">{dayMonth(r.date)}</span>
                       </div>
                       <div className="mt-1.5">

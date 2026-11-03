@@ -54,8 +54,8 @@ function MobileHeader() {
               Icon && <Icon className="size-12 shrink-0 text-gold-400" strokeWidth={1.5} />
             )}
             <div className="min-w-0">
-              <h1 className="truncate text-[28px] font-bold leading-tight">{meta.title}</h1>
-              {meta.subtitle && <p className="line-clamp-2 text-sm text-white/85">{meta.subtitle}</p>}
+              <h1 className="wrap-anywhere text-[28px] font-bold leading-tight">{meta.title}</h1>
+              {meta.subtitle && <p className="text-sm text-white/85">{meta.subtitle}</p>}
             </div>
           </div>
         )}

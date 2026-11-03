@@ -8,7 +8,6 @@
   Church,
   Info,
   ListChecks,
-  Lock,
   Phone,
   Settings,
   ShieldCheck,
@@ -62,9 +61,10 @@ export const MENU_SECTIONS: NavSection[] = [
     title: 'Cadastros',
     icon: UsersRound,
     items: [
+      { label: 'Cadastro de Usuários', description: 'Adicione ou edite usuários do aplicativo', to: '/usuarios', icon: UserCog, module: 'usuarios' },
+      { label: 'Perfis de Acesso', description: 'Cadastre perfis e edite as permissões de cada um', to: '/perfis', icon: ShieldCheck, module: 'perfis' },
       { label: 'Cadastro de Membros', description: 'Gerencie os membros da igreja', to: '/membros', icon: UsersRound, module: 'membros' },
       { label: 'Solicitações de Cadastro', description: 'Analise os pedidos de novos membros', to: '/solicitacoes', icon: UserPlus, module: 'membros', badge: 'requests' },
-      { label: 'Cadastro de Usuários', description: 'Adicione ou edite usuários do aplicativo', to: '/usuarios', icon: UserCog, module: 'usuarios' },
       { label: 'Equipes e Ministérios', description: 'Cadastre e gerencie equipes e ministérios', to: '/equipes', icon: Users, module: 'equipes' },
       { label: 'Líderes', description: 'Gerencie os líderes da igreja', to: '/lideres', icon: UserCheck, module: 'lideres' },
       { label: 'Cargos e Funções', description: 'Defina os cargos e funções', to: '/cargos', icon: BadgeCheck, module: 'cargos' },
@@ -87,8 +87,6 @@ export const MENU_SECTIONS: NavSection[] = [
     title: 'Administração',
     icon: ShieldCheck,
     items: [
-      { label: 'Perfis de Acesso', description: 'Gerencie os perfis de acesso', to: '/perfis', icon: ShieldCheck, module: 'perfis' },
-      { label: 'Permissões de Usuários', description: 'Defina as permissões dos usuários', to: '/permissoes', icon: Lock, module: 'permissoes' },
       { label: 'Notificações', description: 'Configure as notificações do app', to: '/notificacoes', icon: Bell, module: 'notificacoes' },
       { label: 'Relatórios Gerais', description: 'Acesse relatórios e estatísticas', to: '/relatorios', icon: ChartColumn, module: 'relatorios' },
     ],

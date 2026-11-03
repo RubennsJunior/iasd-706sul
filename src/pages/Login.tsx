@@ -144,7 +144,7 @@ export function LoginPage() {
                     >
                       <Avatar name={u.name} size="sm" />
                       <span className="min-w-0 flex-1">
-                        <span className="block truncate text-sm font-medium text-ink">{u.name}</span>
+                        <span className="block wrap-anywhere text-sm font-medium text-ink">{u.name}</span>
                         <span className="block text-xs text-muted">{roles.find((r) => r.id === u.roleId)?.name}</span>
                       </span>
                     </button>

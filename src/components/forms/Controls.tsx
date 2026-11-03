@@ -1,5 +1,5 @@
-import { useId, useState } from 'react'
-import type { ReactNode } from 'react'
+import { useId, useLayoutEffect, useRef, useState } from 'react'
+import type { KeyboardEvent, ReactNode } from 'react'
 import { Search } from 'lucide-react'
 import { cn, matchesQuery } from '../../utils/misc'
 import type { Option } from '../../utils/labels'
@@ -9,6 +9,63 @@ export const controlClass = (error?: string) =>
     'w-full rounded-xl border bg-white px-3.5 py-2.5 text-sm text-ink outline-none transition-colors placeholder:text-muted/70 focus:border-royal-500 focus:ring-2 focus:ring-royal-100 disabled:bg-slate-50',
     error ? 'border-red-400' : 'border-line',
   )
+
+/**
+ * Campo de texto de uma linha que cresce para mostrar o conteúdo inteiro: nomes, títulos e locais longos quebram em
+ * mais linhas em vez de ficar cortados dentro do campo. Enter envia o formulário, como num campo comum.
+ */
+export function GrowingText({
+  id,
+  value,
+  onChange,
+  placeholder,
+  disabled,
+  error,
+}: {
+  id: string
+  value: string
+  onChange(value: string): void
+  placeholder?: string
+  disabled?: boolean
+  error?: string
+}) {
+  const ref = useRef<HTMLTextAreaElement>(null)
+
+  useLayoutEffect(() => {
+    const element = ref.current
+    if (!element) return
+    const fit = () => {
+      element.style.height = 'auto'
+      element.style.height = `${element.scrollHeight}px`
+    }
+    fit()
+    // a largura muda (girar a tela, abrir o menu lateral): o texto quebra em outro lugar e a altura acompanha
+    const observer = typeof ResizeObserver === 'undefined' ? undefined : new ResizeObserver(fit)
+    observer?.observe(element)
+    return () => observer?.disconnect()
+  }, [value])
+
+  const onKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (event.key !== 'Enter' || event.shiftKey || event.nativeEvent.isComposing) return
+    event.preventDefault()
+    event.currentTarget.form?.requestSubmit()
+  }
+
+  return (
+    <textarea
+      ref={ref}
+      id={id}
+      rows={1}
+      value={value}
+      placeholder={placeholder}
+      disabled={disabled}
+      autoComplete="off"
+      onKeyDown={onKeyDown}
+      onChange={(event) => onChange(event.target.value.replace(/\s*[\r\n]+\s*/g, ' '))}
+      className={cn(controlClass(error), 'block resize-none overflow-hidden wrap-anywhere')}
+    />
+  )
+}
 
 export function FieldWrapper({
   id,
@@ -125,9 +182,9 @@ export function CheckboxList({
                 type="checkbox"
                 checked={value.includes(option.value)}
                 onChange={() => toggle(option.value)}
-                className="size-4 accent-navy-900"
+                className="size-4 shrink-0 accent-navy-900"
               />
-              {option.label}
+              <span className="min-w-0 wrap-anywhere">{option.label}</span>
             </label>
           </li>
         ))}

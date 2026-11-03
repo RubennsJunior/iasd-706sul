@@ -218,7 +218,7 @@ export function Select({
         // a barra de espaço também aciona o clique ao soltar a tecla; o teclado já tratou o evento
         onKeyUp={(event) => event.key === ' ' && event.preventDefault()}
         className={cn(
-          // min-w-0: dentro de uma linha flexível o campo pode encolher abaixo da largura do texto (que é cortado com "…")
+          // min-w-0: dentro de uma linha flexível o campo pode encolher abaixo da largura do texto (que quebra em linhas)
           pill
             ? 'inline-flex min-w-0 max-w-full items-center gap-1.5 rounded-full border border-line bg-white py-1.5 pl-3 pr-2.5 text-xs font-medium text-ink transition-colors hover:bg-royal-50 focus-visible:border-royal-500 disabled:opacity-60'
             : cn(controlClass(error), 'flex min-w-0 items-center justify-between gap-2 text-left disabled:cursor-not-allowed'),
@@ -226,7 +226,8 @@ export function Select({
           className,
         )}
       >
-        <span className={cn('min-w-0 flex-1 truncate', !selected && 'text-muted')}>{selected?.label ?? placeholder}</span>
+        {/* o texto escolhido quebra em mais de uma linha em vez de ser cortado com "…" */}
+        <span className={cn('min-w-0 flex-1 wrap-anywhere', !selected && 'text-muted')}>{selected?.label ?? placeholder}</span>
         <ChevronDown className={cn('shrink-0 text-muted transition-transform', pill ? 'size-3.5' : 'size-4', open && 'rotate-180')} />
       </button>
 

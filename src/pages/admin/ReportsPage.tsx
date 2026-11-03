@@ -44,7 +44,7 @@ function BarList({ rows, max }: { rows: Array<{ label: string; value: number; to
       {rows.map((row) => (
         <li key={row.label}>
           <div className="mb-1 flex justify-between gap-3 text-sm">
-            <span className="truncate text-ink">{row.label}</span>
+            <span className="wrap-anywhere text-ink">{row.label}</span>
             <span className="shrink-0 font-semibold text-navy-900">{row.value}</span>
           </div>
           <ProgressBar value={(row.value / top) * 100} tone={row.tone} />
@@ -178,7 +178,7 @@ export function ReportsPage() {
               <ul className="divide-y divide-line">
                 {birthdays.slice(0, 8).map(({ member, date, inDays }) => (
                   <li key={member.id} className="flex items-center justify-between gap-3 py-2 text-sm">
-                    <span className="truncate font-medium text-ink">{member.fullName}</span>
+                    <span className="wrap-anywhere font-medium text-ink">{member.fullName}</span>
                     <span className="shrink-0 text-muted">
                       {inDays === 0 ? 'Hoje!' : `${dayMonth(date)} • ${formatDateShort(date).split(',')[0]}`}
                     </span>

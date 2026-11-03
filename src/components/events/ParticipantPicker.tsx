@@ -82,7 +82,7 @@ export function ParticipantPicker({ value, onChange, memberOptions, teams, initi
                     <Users className="size-5" />
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-semibold text-navy-900">{team.name}</span>
+                    <span className="block wrap-anywhere text-sm font-semibold text-navy-900">{team.name}</span>
                     <span className="block text-xs text-muted">
                       {ids.length} integrante{ids.length === 1 ? '' : 's'}
                       {inside > 0 && ` · ${inside} já incluído${inside === 1 ? '' : 's'}`}

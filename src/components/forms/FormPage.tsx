@@ -10,7 +10,7 @@ import { Button } from '../ui/Button'
 import { Card } from '../ui/Card'
 import { SegmentedTabs } from '../ui/Tabs'
 import type { TabItem } from '../ui/Tabs'
-import { CheckboxList, FieldWrapper, Switch, controlClass } from './Controls'
+import { CheckboxList, FieldWrapper, GrowingText, Switch, controlClass } from './Controls'
 import { Select } from './Select'
 import { isEmpty } from './types'
 import type { FieldDef, Values } from './types'
@@ -165,6 +165,17 @@ export function FormPage({
               placeholder={field.placeholder}
               onChange={(event) => setValue(field.name, event.target.value)}
               className={controlClass(error)}
+            />
+          )
+        } else if (field.type === 'text') {
+          control = (
+            <GrowingText
+              id={id}
+              value={(value as string) ?? ''}
+              placeholder={field.placeholder}
+              disabled={field.readOnly}
+              onChange={(v) => setValue(field.name, v)}
+              error={error}
             />
           )
         } else if (field.type === 'select') {

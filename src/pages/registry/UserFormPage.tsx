@@ -42,8 +42,8 @@ function UserSummary({ item, values, role }: { item?: AppUser; values: Values; r
       <Avatar name={name || 'Novo usuário'} size="lg" />
       {/* largura mínima própria: em tela estreita os dados de acesso quebram para baixo em vez de espremer o nome */}
       <div className="min-w-0 grow basis-44">
-        <p className="truncate text-lg font-semibold text-navy-900">{name || 'Novo usuário'}</p>
-        <p className="truncate text-sm text-muted">{String(values.email ?? '') || 'Informe o e-mail de acesso'}</p>
+        <p className="wrap-anywhere text-lg font-semibold text-navy-900">{name || 'Novo usuário'}</p>
+        <p className="wrap-anywhere text-sm text-muted">{String(values.email ?? '') || 'Informe o e-mail de acesso'}</p>
         <div className="mt-2 flex flex-wrap items-center gap-2">
           {role && <Badge tone="info">{role.name}</Badge>}
           {values.customEnabled && <Badge tone="gold">Permissões personalizadas</Badge>}

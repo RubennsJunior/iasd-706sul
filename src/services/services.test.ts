@@ -157,6 +157,22 @@ describe('usuários e perfis', () => {
     await expect(rolesService.remove('role-membro')).rejects.toThrow(/usuário/)
   })
 
+  it('valida o cadastro de perfis: nome obrigatório e único, administrador intocável', async () => {
+    const matrix = buildMatrix({ eventos: ['view'] })
+    await expect(rolesService.create({ name: '  ', description: '', permissions: matrix })).rejects.toThrow(/nome/)
+    await expect(rolesService.create({ name: 'secretaria', description: '', permissions: matrix })).rejects.toThrow(/já existe/i)
+
+    const novo = await rolesService.create({ name: 'Tesouraria', description: '', permissions: matrix })
+    // renomear para o próprio nome é permitido; para o de outro perfil, não
+    await expect(rolesService.update(novo.id, { name: 'Tesouraria', description: 'Finanças' })).resolves.toBeDefined()
+    await expect(rolesService.update(novo.id, { name: 'Pastor' })).rejects.toThrow(/já existe/i)
+
+    // o perfil do administrador não perde acesso nem ganha abrangência
+    await expect(rolesService.update('role-admin', { permissions: buildMatrix({ eventos: ['view'] }) })).rejects.toThrow(/administrador/)
+    await expect(rolesService.update('role-admin', { reach: 'equipe' })).rejects.toThrow(/administrador/)
+    await expect(rolesService.update('role-admin', { description: 'Acesso total.' })).resolves.toBeDefined()
+  })
+
   it('avalia permissões, com "gerenciar" liberando todas as ações', () => {
     const matrix = buildMatrix({ eventos: ['view'], equipes: ['manage'] })
     expect(hasPermission(matrix, 'eventos', 'view')).toBe(true)
@@ -415,18 +431,21 @@ describe('perfis gravados antes de um módulo existir (tela branca em Permissõe
     }
   }
 
-  it('completa o módulo novo: administrador com tudo, os demais sem acesso, sem mexer no resto', async () => {
+  it('completa o módulo novo com o padrão de fábrica de cada perfil, sem mexer no resto', async () => {
     await semPatrimonio()
     const antes = (await repos.roles.get('role-secretaria'))!.permissions
     expect(antes.patrimonio).toBeUndefined()
 
     await completeRoles()
 
+    // administrador: tudo; Secretaria mantém o cadastro (padrão de fábrica); Membro continua sem acesso
     const admin = (await repos.roles.get('role-admin'))!.permissions.patrimonio
     expect(Object.values(admin).every(Boolean)).toBe(true)
     const secretaria = (await repos.roles.get('role-secretaria'))!.permissions
-    expect(secretaria.patrimonio).toEqual({ view: false, create: false, edit: false, delete: false, manage: false })
+    expect(secretaria.patrimonio).toEqual({ view: true, create: true, edit: true, delete: true, manage: false })
     expect(secretaria.membros).toEqual(antes.membros)
+    const membro = (await repos.roles.get('role-membro'))!.permissions.patrimonio
+    expect(membro).toEqual({ view: false, create: false, edit: false, delete: false, manage: false })
   })
 
   it('perfil criado pela igreja também é completado, sem acesso, e rodar de novo não muda nada', async () => {

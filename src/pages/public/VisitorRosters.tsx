@@ -42,7 +42,7 @@ function RosterCard({ roster, teamName, nameOf, query }: { roster: Roster; teamN
             >
               <span className="flex min-w-0 items-center gap-1.5 text-ink">
                 {mine && <CheckCircle2 className="size-4 shrink-0 text-emerald-600" />}
-                <span className="truncate">{name}</span>
+                <span className="wrap-anywhere">{name}</span>
               </span>
               <span className="shrink-0 text-xs text-muted">{slot.role}</span>
             </li>

@@ -56,7 +56,7 @@ export function SabbathPage() {
                       <Badge tone="info">{m.ageGroup}</Badge>
                     </span>
                     <span className="mt-0.5 block text-lg font-semibold text-navy-900">{m.title}</span>
-                    <span className="line-clamp-2 text-sm text-ink">{m.description}</span>
+                    <span className="text-sm text-ink">{m.description}</span>
                   </span>
                 </Card>
               </button>

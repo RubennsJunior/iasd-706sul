@@ -52,8 +52,8 @@ export function UsersPage() {
             <div className="flex items-center gap-3">
               <Avatar name={u.name} size="sm" />
               <div className="min-w-0">
-                <p className="truncate font-medium text-navy-900">{u.name}</p>
-                <p className="truncate text-xs text-muted">{u.email}</p>
+                <p className="wrap-anywhere font-medium text-navy-900">{u.name}</p>
+                <p className="wrap-anywhere text-xs text-muted">{u.email}</p>
               </div>
             </div>
           ),

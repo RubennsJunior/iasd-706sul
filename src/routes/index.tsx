@@ -1,11 +1,10 @@
 ﻿import { lazy } from 'react'
 import type { ComponentType, ReactNode } from 'react'
-import { Route, Routes } from 'react-router-dom'
+import { Navigate, Route, Routes } from 'react-router-dom'
 import { AppLayout } from '../layouts/AppLayout'
 import { PublicShell } from '../layouts/PublicShell'
 const NotificationFormPage = lazyPage(() => import('../pages/admin/NotificationFormPage'), 'NotificationFormPage')
 const NotificationsPage = lazyPage(() => import('../pages/admin/NotificationsPage'), 'NotificationsPage')
-const PermissionsPage = lazyPage(() => import('../pages/admin/PermissionsPage'), 'PermissionsPage')
 const ReportsPage = lazyPage(() => import('../pages/admin/ReportsPage'), 'ReportsPage')
 const RolesPage = lazyPage(() => import('../pages/admin/RolesPage'), 'RolesPage')
 const RegisterPage = lazyPage(() => import('../pages/public/RegisterPage'), 'RegisterPage')
@@ -117,7 +116,7 @@ export function AppRoutes() {
         <Route path="participantes/novo" element={guarded('participantes', <ParticipantFormPage />)} />
 
         <Route path="perfis/*" element={guarded('perfis', <RolesPage />)} />
-        <Route path="permissoes" element={guarded('permissoes', <PermissionsPage />)} />
+        <Route path="permissoes" element={<Navigate to="/perfis" replace />} />
         <Route path="notificacoes" element={guarded('notificacoes', <NotificationsPage />)} />
         <Route path="notificacoes/nova" element={guarded('notificacoes', <NotificationFormPage />)} />
         <Route path="relatorios" element={guarded('relatorios', <ReportsPage />)} />

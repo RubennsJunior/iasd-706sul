@@ -15,7 +15,7 @@ export const MODULE_LABELS: Record<ModuleKey, string> = {
   cultos: 'Cultos e Programações',
   participantes: 'Participantes',
   perfis: 'Perfis de Acesso',
-  permissoes: 'Permissões de Usuários',
+  permissoes: 'Permissões personalizadas do usuário',
   notificacoes: 'Notificações',
   relatorios: 'Relatórios',
   configuracoes: 'Configurações',
