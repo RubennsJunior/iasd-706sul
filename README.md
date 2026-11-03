@@ -196,14 +196,14 @@ Voltar do Android fecha janelas e listas abertas, volta uma tela e só sai do ap
 (`src/components/NativeBackButton.tsx`, plugin `@capacitor/app`).
 
 ```bash
-npm run build:apk               # APK de lançamento assinado: apk/iasd-<versão>.apk (ex.: apk/iasd-1.0.2.apk)
+npm run build:apk               # APK de lançamento assinado: apk/iasd-<versão>.apk (ex.: apk/iasd-1.0.3.apk)
 npm run build:apk -- --debug    # APK de teste (depurável): apk/iasd-<versão>-debug.apk
 npm run cap:sync                # só build + copia o site para o projeto Android
 npm run cap:open                # abre no Android Studio
 ```
 
 O APK é gerado como no projeto ERP_Controle_Produção (`scripts/build-apk.mjs`): a **versão vem do `package.json`** (hoje
-**1.0.2**; o `versionCode` é `major×10000 + minor×100 + patch`, então 1.0.1 vira 10001 e um APK mais novo sempre atualiza o
+**1.0.3**; o `versionCode` é `major×10000 + minor×100 + patch`, então 1.0.1 vira 10001 e um APK mais novo sempre atualiza o
 instalado). Sai um **único arquivo**, no padrão `iasd-<versão>.apk`. Em `apk/` fica só o da versão atual (os antigos
 continuam no histórico do Git) e o de teste sai à parte, sem mexer no de lançamento. Para lançar uma versão nova, mude
 `version` no `package.json` (e `APP_VERSION` em `src/config.ts`) e rode `npm run build:apk`.
