@@ -103,15 +103,18 @@ Os dados ficam no **Firestore** do projeto `erp-igrejaadventista`, em `igrejas/i
 - **Tempo real:** o que uma pessoa cadastra aparece nos outros aparelhos sem recarregar.
 - **Offline:** o Firestore guarda um cache no aparelho; sem internet o sistema continua abrindo e as alterações
   são enviadas quando a conexão volta.
-- **Primeira execução:** se a igreja ainda não tem dados na nuvem, o sistema grava os dados fictícios (uma única vez).
-  Em *Configurações do Aplicativo* dá para restaurá-los, importar ou exportar um backup (exige conexão).
+- **Primeira execução:** se a igreja ainda não tem dados na nuvem, o sistema cria só o necessário para funcionar
+  (perfis de acesso, identidade e configurações da igreja). Membros, equipes, agenda e liturgia começam vazios: a
+  igreja cadastra os dados reais, sem exemplos fictícios. Em *Configurações do Aplicativo* dá para restaurar os
+  dados de exemplo, importar/exportar um backup ou **limpar todos os dados** (mantém usuários, perfis e
+  configurações; exige conexão).
 - **Login:** Firebase Authentication (e-mail e senha). As senhas ficam no Firebase, nunca no Firestore. O perfil de cada
   pessoa é o documento `users/<uid>` (perfil de acesso, situação e permissões personalizadas); a sessão continua
   guardada no aparelho, inclusive sem internet. Cada pessoa troca a própria senha em *Minha conta* e, para as outras,
   o administrador envia o e-mail de nova senha (a senha de outra pessoa não pode ser trocada pelo navegador).
 - **Primeiro administrador:** a conta `admin@admin.com` (criada no Firebase Authentication) ganha o perfil de
-  administrador ao entrar pela primeira vez; ao entrar, o administrador também grava os dados de exemplo (se a igreja
-  ainda não tem nenhum) e acerta o diretório público de nomes. As contas de demonstração antigas (`@igreja.demo`) não
+  administrador ao entrar pela primeira vez; ao entrar, o administrador também cria o que o sistema precisa (se a
+  igreja ainda não tem nada) e acerta o diretório público de nomes. As contas de demonstração antigas (`@igreja.demo`) não
   funcionam na nuvem: exclua-as em *Usuários*. **Troque a senha da conta de administrador** em *Minha conta*. Para
   usar outro e-mail, mude-o em `firestore.rules` e em `VITE_ADMIN_EMAIL`.
 - **Diretório de nomes:** a coleção `directory` guarda só o nome de cada membro (mesmo código). É o que o visitante e os

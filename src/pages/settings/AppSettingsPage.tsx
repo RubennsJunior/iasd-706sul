@@ -1,5 +1,5 @@
 import { useRef } from 'react'
-import { Database, Download, RotateCcw, SlidersHorizontal, Sparkles, Upload } from 'lucide-react'
+import { Database, Download, RotateCcw, SlidersHorizontal, Sparkles, Trash2, Upload } from 'lucide-react'
 import { Switch } from '../../components/forms/Controls'
 import { Button } from '../../components/ui/Button'
 import { Card, SectionHeader } from '../../components/ui/Card'
@@ -10,7 +10,7 @@ import { useSettings } from '../../hooks/useData'
 import { Page } from '../../layouts/PageMeta'
 import { CLOUD_LABEL, CloudStatusDot } from '../../components/CloudStatus'
 import { useCloudStatus } from '../../lib/cloudStatus'
-import { exportAllData, importAllData, resetAllData } from '../../repositories'
+import { clearAllData, exportAllData, importAllData, resetAllData } from '../../repositories'
 import { settingsService } from '../../services'
 import { todayISO } from '../../utils/date'
 import { downloadFile } from '../../utils/misc'
@@ -73,6 +73,21 @@ export function AppSettingsPage() {
     }
   }
 
+  const clear = async () => {
+    const ok = await confirm({
+      title: 'Limpar todos os dados?',
+      message: `Todos os cadastros ${scope} serão apagados: membros, equipes, eventos, escalas, liturgia, avisos e pedidos. Continuam apenas os usuários, os perfis de acesso e as configurações da igreja. Não há como desfazer.`,
+      confirmLabel: 'Apagar tudo',
+    })
+    if (!ok) return
+    try {
+      await clearAllData()
+      toast.success('Dados apagados. O sistema fica só com os usuários e as configurações.')
+    } catch (error) {
+      toast.error(errorMessage(error))
+    }
+  }
+
   return (
     <Page title="Configurações do Aplicativo" subtitle="Personalize o comportamento do app" icon={SlidersHorizontal}>
       <div className="mx-auto max-w-3xl space-y-5">
@@ -123,6 +138,9 @@ export function AppSettingsPage() {
                 />
                 <Button variant="danger" icon={RotateCcw} onClick={reset}>
                   Restaurar dados fictícios
+                </Button>
+                <Button variant="danger" icon={Trash2} onClick={clear}>
+                  Limpar todos os dados
                 </Button>
               </>
             )}

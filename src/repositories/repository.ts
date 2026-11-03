@@ -19,6 +19,8 @@ export interface Repository<T extends Entity> {
 
 export interface ResettableRepository<T extends Entity> extends Repository<T> {
   reset(): void | Promise<void>
+  /** Apaga todos os registros da coleção (sem gravar os dados de exemplo). */
+  clear(): void | Promise<void>
   dump(): T[]
   load(items: T[]): void | Promise<void>
 }

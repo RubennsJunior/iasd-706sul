@@ -4,6 +4,7 @@ import {
   deleteField,
   doc,
   getDocFromServer,
+  getDocsFromServer,
   onSnapshot,
   setDoc,
   updateDoc,
@@ -316,6 +317,23 @@ export function createFirestoreRepository<T extends Entity>(
       await ready
       if (isLocal()) return local.reset()
       await replaceAll(seed())
+    },
+    /** Apaga todos os documentos direto do servidor (sem gravar exemplo), em lotes. */
+    async clear() {
+      start()
+      await ready
+      if (isLocal()) return local.clear()
+      // Lê do servidor: o cache local pode estar desatualizado depois de uma limpeza feita em outro aparelho.
+      const snapshot = await getDocsFromServer(collection(getDb(), 'igrejas', FIREBASE_TENANT, name))
+      for (let i = 0; i < snapshot.docs.length; i += BATCH_SIZE) {
+        const batch = writeBatch(getDb())
+        for (const item of snapshot.docs.slice(i, i + BATCH_SIZE)) batch.delete(item.ref)
+        await batch.commit()
+      }
+      overlay.clear()
+      server = new Map()
+      rebuild()
+      emit()
     },
     dump: () => (isLocal() ? local.dump() : [...current]),
     async load(items) {

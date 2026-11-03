@@ -128,6 +128,9 @@ export function createLocalRepository<T extends Entity>(
       storage.remove(key)
       emit()
     },
+    clear() {
+      write([])
+    },
     dump: () => [...read()],
     load(items) {
       write(items)

@@ -106,16 +106,43 @@ void repos.church.list().then(([church]) => {
 const entries = Object.entries(repos)
 
 /**
- * Primeira configuração da nuvem, feita pelo administrador logo depois de entrar: grava os dados de exemplo se a
- * igreja ainda não tem nada.
+ * O que nunca é apagado ao "limpar os dados": contas de acesso, perfis de permissão e identidade/configuração da
+ * igreja. As demais coleções (membros, equipes, agenda, liturgia, avisos…) voltam a ficar vazias.
  */
-export async function prepareCloud() {
-  if (!cloudEnabled) return
-  await bootstrapCloud(entries.map(([, repo]) => repo as unknown as CloudRepository<Entity>))
-}
+const KEEP_ON_CLEAR = new Set(['users', 'roles', 'church', 'settings'])
 
 /** Usuários na nuvem têm acesso próprio no Firebase Authentication: restaurar/importar dados nunca mexe neles. */
 const keepUsers = (name: string) => cloudEnabled && name === 'users'
+
+/**
+ * Primeira configuração da nuvem, feita pelo administrador logo depois de entrar: cria só o que o sistema precisa
+ * para funcionar (perfis de acesso, identidade e configurações da igreja). Os cadastros começam vazios — quem usa
+ * o sistema cadastra os dados reais, sem exemplos fictícios.
+ */
+export async function prepareCloud() {
+  if (!cloudEnabled) return
+  await bootstrapCloud(
+    entries.filter(([name]) => KEEP_ON_CLEAR.has(name)).map(([, repo]) => repo as unknown as CloudRepository<Entity>),
+  )
+}
+
+/** Apaga todos os cadastros, deixando somente os usuários e o que o sistema precisa para funcionar. */
+export async function clearAllData() {
+  const failures: string[] = []
+  for (const [name, repo] of entries) {
+    if (KEEP_ON_CLEAR.has(name)) continue
+    try {
+      await repo.clear()
+    } catch {
+      failures.push(name)
+    }
+  }
+  if (failures.length) {
+    throw new Error(
+      `Não foi possível apagar: ${failures.join(', ')}. Verifique a conexão com a nuvem e tente novamente.`,
+    )
+  }
+}
 
 const directoryOf = (members: Array<{ id: string; fullName: string }>): DirectoryEntry[] =>
   members.map((m) => ({ id: m.id, fullName: m.fullName }))
