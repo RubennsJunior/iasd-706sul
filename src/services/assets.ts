@@ -7,3 +7,4 @@ export const assetsService = createCrudService<Asset>(repos.assets, {
   activityKind: 'patrimonio',
   nameOf: (a) => `${a.assetNumber ? `[${a.assetNumber}] ` : ''}${a.name}`,
 })
+

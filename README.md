@@ -67,7 +67,7 @@ dados fictícios. Para esconder a lista de contas e o "Testar outro perfil" (ant
   abre a edição direto, sem janela de prévia. No cadastro novo, **"Aproveitar cadastro de membro"** preenche os dados a
   partir de um membro que ainda não tem usuário. Todo usuário criado manualmente também ganha (ou é vinculado a) um
   cadastro de membro, usado em "minhas escalas" e "minhas equipes".
-- **Menu administrativo** — Cadastros (membros, usuários, equipes, líderes, cargos, departamentos),
+- **Menu administrativo** — Cadastros (membros, usuários, equipes, líderes, cargos, departamentos, patrimônio),
   Gerenciamento (eventos, **escalas**, cultos e programações, liturgias, participantes),
   Administração (perfis, permissões, notificações, relatórios) e Configurações.
 - **Escalas** — montagem por equipe, vínculo opcional a evento/culto, aviso de **conflito de horário**,
