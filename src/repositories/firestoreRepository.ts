@@ -14,7 +14,7 @@ import type { Entity, ID } from '../models'
 import { FIREBASE_TENANT, getDb } from '../lib/firebase'
 import { explainCloudError, reportRepoState, reportWriteError } from '../lib/cloudStatus'
 import { uid } from '../utils/misc'
-import { DATA_VERSION, createLocalRepository } from './localRepository'
+import { DATA_VERSION, STORAGE_NAMESPACE, createLocalRepository, storage } from './localRepository'
 import type { ResettableRepository } from './repository'
 
 /** Sem nenhuma resposta da nuvem por este tempo, o app segue com os dados locais. */
@@ -50,6 +50,8 @@ export function createFirestoreRepository<T extends Entity>(
   options: FirestoreRepositoryOptions<T> = {},
 ): CloudRepository<T> {
   const local = createLocalRepository<T>(name, seed, idPrefix)
+  /** Marca (por aparelho) de que esta coleção já recebeu uma resposta confirmada do servidor. */
+  const syncedKey = `${STORAGE_NAMESPACE}:synced:${FIREBASE_TENANT}:${name}`
   const listeners = new Set<() => void>()
   const seedOrder = new Map(seed().map((item, index) => [item.id, index]))
 
@@ -113,11 +115,16 @@ export function createFirestoreRepository<T extends Entity>(
       stop = onSnapshot(
         collection(getDb(), 'igrejas', FIREBASE_TENANT, name),
         (snapshot) => {
+          const fromServer = !snapshot.metadata.fromCache
+          if (fromServer) storage.set(syncedKey, '1')
+          // Cache vazio é ambíguo: pode ser "coleção sem nada" ou "nunca sincronizou" (e o servidor ainda vai
+          // responder, talvez recusando). Só vale como resposta se esta coleção já foi sincronizada antes.
+          if (!fromServer && snapshot.empty && mode !== 'cloud' && storage.get(syncedKey) !== '1') return
           clearTimeout(timer)
           // Se a nuvem demorou e ainda não houve gravação local, vale mais voltar para a nuvem.
           if (mode === 'local' && !(fellBackByTimeout && !localWrites)) return
           mode = 'cloud'
-          confirmed ||= !snapshot.metadata.fromCache
+          confirmed ||= fromServer
           for (const [id, op] of overlay) if (op.acked) overlay.delete(id)
           server = new Map(snapshot.docs.map((d) => [d.id, { ...d.data(), id: d.id } as T]))
           reportRepoState(name, { state: confirmed ? 'online' : 'cache' })

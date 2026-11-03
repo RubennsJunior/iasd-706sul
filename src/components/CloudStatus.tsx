@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { CloudOff } from 'lucide-react'
+import { useAuth } from '../contexts/AuthContext'
 import { useToast } from '../contexts/ToastContext'
 import { useCloudStatus } from '../lib/cloudStatus'
 import type { CloudState } from '../lib/cloudStatus'
@@ -28,12 +29,15 @@ export function CloudStatusDot({ state }: { state: CloudState }) {
 /** Aviso fixo quando a nuvem está inacessível: ninguém grava dados achando que foram para o servidor. */
 export function CloudBanner() {
   const { state, reason } = useCloudStatus()
+  const { can } = useAuth()
   if (state !== 'local') return null
+  // O motivo técnico (regras, banco inexistente…) interessa só a quem administra; os demais veem um aviso simples.
+  const detail = can('configuracoes', 'manage') && reason ? reason : 'Suas alterações ficam salvas só neste aparelho por enquanto.'
   return (
     <div role="status" className="flex items-start gap-2.5 bg-red-50 px-4 py-2.5 text-xs text-red-900">
       <CloudOff className="mt-0.5 size-4 shrink-0" />
       <p>
-        <strong className="font-semibold">Modo local.</strong> {reason ?? CLOUD_LABEL.local}{' '}
+        <strong className="font-semibold">Sem sincronização.</strong> {detail}{' '}
         <button type="button" onClick={() => window.location.reload()} className="font-semibold underline">
           Tentar novamente
         </button>

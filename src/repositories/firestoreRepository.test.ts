@@ -14,7 +14,7 @@ const fake = vi.hoisted(() => {
     [...store.entries()]
       .filter(([path]) => path.startsWith(`${col}/`) && !path.slice(col.length + 1).includes('/'))
       .map(([path, data]) => ({ id: path.split('/').pop() as string, data: () => data }))
-  const snapshot = (col: string, docs = docsOf(col)) => ({ docs, metadata: { fromCache: state.fromCache } })
+  const snapshot = (col: string, docs = docsOf(col)) => ({ docs, empty: docs.length === 0, metadata: { fromCache: state.fromCache } })
   const notify = () => subs.forEach((s) => s.next(snapshot(s.col)))
   const ref = (_db: unknown, ...segments: string[]) => ({ path: segments.join('/') })
   const apply = (path: string, data: Data, merge: boolean) => {
@@ -225,6 +225,29 @@ describe('repositório Firestore', () => {
     expect(fake.calls).toHaveLength(0)
     expect(getCloudStatus()).toMatchObject({ state: 'local' })
     expect(getCloudStatus().reason).toMatch(/regras/i)
+  })
+
+  it('cache vazio de uma coleção nunca sincronizada não vale como resposta (o servidor ainda pode recusar)', async () => {
+    const { repo } = fresh()
+    fake.state.fromCache = true // o Firestore entrega primeiro o cache em disco, vazio
+    fake.state.failListen = undefined
+    let settled = false
+    const pending = repo.list().then((items) => ((settled = true), items))
+    await tick()
+    expect(settled).toBe(false)
+    expect(repo.peek?.()).toBeUndefined()
+    // depois o servidor recusa: a coleção segue no aparelho, com os dados de exemplo
+    fake.subs.forEach((s) => s.error({ code: 'permission-denied' }))
+    expect((await pending).map((i) => i.id)).toEqual(['i-1', 'i-2'])
+    expect(getCloudStatus().state).toBe('local')
+  })
+
+  it('cache vazio vale quando a coleção já foi sincronizada antes (abrir offline)', async () => {
+    const { name, repo } = fresh()
+    localStorage.setItem(`igreja-sda:synced:teste:${name}`, '1')
+    fake.state.fromCache = true
+    expect(await repo.list()).toEqual([])
+    expect(repo.peek?.()).toEqual([])
   })
 
   it('sem resposta por 10 segundos, segue com os dados locais', async () => {

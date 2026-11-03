@@ -47,10 +47,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     else storage.remove(SESSION_KEY)
   }, [])
 
-  // Sessão inválida: usuário excluído, inativo ou bloqueado.
+  // Sessão inválida: usuário excluído, inativo ou bloqueado. Lista de usuários vazia significa "dados ainda
+  // não chegaram" (nuvem), nunca "todos foram excluídos" — sempre existe ao menos um administrador.
   useEffect(() => {
-    if (ready && userId && (!user || user.status !== 'ativo')) persist(null)
-  }, [ready, userId, user, persist])
+    if (ready && userId && users.length > 0 && (!user || user.status !== 'ativo')) persist(null)
+  }, [ready, userId, user, users.length, persist])
 
   useEffect(() => {
     setActor(user?.name ?? 'Sistema')

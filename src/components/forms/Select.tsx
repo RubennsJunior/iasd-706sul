@@ -218,9 +218,10 @@ export function Select({
         // a barra de espaço também aciona o clique ao soltar a tecla; o teclado já tratou o evento
         onKeyUp={(event) => event.key === ' ' && event.preventDefault()}
         className={cn(
+          // min-w-0: dentro de uma linha flexível o campo pode encolher abaixo da largura do texto (que é cortado com "…")
           pill
-            ? 'inline-flex max-w-full items-center gap-1.5 rounded-full border border-line bg-white py-1.5 pl-3 pr-2.5 text-xs font-medium text-ink transition-colors hover:bg-royal-50 focus-visible:border-royal-500 disabled:opacity-60'
-            : cn(controlClass(error), 'flex items-center justify-between gap-2 text-left disabled:cursor-not-allowed'),
+            ? 'inline-flex min-w-0 max-w-full items-center gap-1.5 rounded-full border border-line bg-white py-1.5 pl-3 pr-2.5 text-xs font-medium text-ink transition-colors hover:bg-royal-50 focus-visible:border-royal-500 disabled:opacity-60'
+            : cn(controlClass(error), 'flex min-w-0 items-center justify-between gap-2 text-left disabled:cursor-not-allowed'),
           open && (pill ? 'border-royal-500 bg-royal-50' : 'border-royal-500 ring-2 ring-royal-100'),
           className,
         )}

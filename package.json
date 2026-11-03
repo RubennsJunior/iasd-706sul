@@ -15,7 +15,7 @@
     "icons": "node scripts/generate-icons.mjs",
     "cap:sync": "npm run build && cap sync android",
     "cap:open": "cap open android",
-    "android:apk": "npm run cap:sync && cd android && gradlew.bat assembleDebug"
+    "android:apk": "npm run cap:sync && cd android && .\\gradlew.bat assembleDebug"
   },
   "dependencies": {
     "@capacitor/app": "^8.1.2",
