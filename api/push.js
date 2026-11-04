@@ -10,6 +10,7 @@
  * Precisa da variável FIREBASE_SERVICE_ACCOUNT (veja o README). Sem ela responde { configured: false }.
  */
 import { getContext } from './_lib/context.js'
+import { diagnose } from './_lib/diagnose.js'
 import { flush } from './_lib/pushCore.js'
 
 function cors(res) {
@@ -32,6 +33,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Método não permitido.' })
   } catch (error) {
     console.error('push', error)
-    return res.status(500).json({ configured: true, error: 'Não foi possível enviar as notificações agora.' })
+    // `motivo` diz de onde veio a falha (conta de serviço, permissão do Firestore, rede…) sem expor nenhum segredo
+    return res.status(500).json({ configured: true, error: 'Não foi possível enviar as notificações agora.', ...diagnose(error) })
   }
 }
