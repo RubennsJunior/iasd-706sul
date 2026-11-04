@@ -111,6 +111,8 @@ for (const [name, size, fraction] of [
 ]) {
   await (await artwork(size, size, navyEmblem, fraction, { background: WHITE })).toFile(join(iconDir, name))
 }
+// Selo da barra de status nas notificações (Android): só o emblema branco, com transparência (um ícone com fundo viraria um quadrado)
+await (await artwork(96, 96, whiteEmblem, 0.86)).toFile(join(iconDir, 'badge-96.png'))
 await writeFile(join(iconDir, '.generated'), 'Gerado por scripts/generate-icons.mjs\n')
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -132,6 +134,8 @@ for (const [density, [legacy, adaptive]] of Object.entries(DENSITIES)) {
 // Abertura do Android 12+: só o emblema branco (o fundo azul-marinho vem do tema)
 await mkdir(join(res, 'drawable-nodpi'), { recursive: true })
 await (await artwork(960, 960, whiteEmblem, 0.48)).toFile(join(res, 'drawable-nodpi', 'ic_splash_logo.png'))
+// Ícone pequeno das notificações (barra de status): emblema branco com transparência
+await (await artwork(96, 96, whiteEmblem, 0.86)).toFile(join(res, 'drawable-nodpi', 'ic_stat_notify.png'))
 
 // Imagens de abertura: mantém os tamanhos que o projeto já tem (retrato, paisagem, escuro, cada densidade)
 let splashes = 0

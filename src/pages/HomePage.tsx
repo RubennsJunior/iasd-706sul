@@ -23,6 +23,7 @@ import {
 import type { LucideIcon } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { StatusBadge } from '../components/ui/Badge'
+import { PushPrompt } from '../components/notifications/PushPrompt'
 import { Banner } from '../components/ui/Banner'
 import { Button } from '../components/ui/Button'
 import { Card, SectionHeader } from '../components/ui/Card'
@@ -180,6 +181,7 @@ export function HomePage() {
     <Page title="Início" subtitle="Visão geral da igreja" variant="home">
       <div className="space-y-4 lg:grid lg:grid-cols-3 lg:gap-6 lg:space-y-0">
         <div className="space-y-4 lg:col-span-2">
+          <PushPrompt />
           {pending > 0 && (
             <Banner
               icon={

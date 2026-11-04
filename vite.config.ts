@@ -23,6 +23,7 @@ function precacheServiceWorker(): Plugin {
         '/icons/icon-512.png',
         '/icons/icon-maskable-512.png',
         '/icons/apple-touch-icon.png',
+        '/icons/badge-96.png',
       ]
       const urls = ['/', ...files.map((file) => `/${file}`), ...extras]
       const version = createHash('sha1').update(urls.join('|')).digest('hex').slice(0, 10)
@@ -36,10 +37,15 @@ function precacheServiceWorker(): Plugin {
 }
 
 // https://vite.dev/config/
+// Em desenvolvimento a função /api/push roda localmente (npm run dev:api); na Vercel ela é a função de api/push.js.
+const localApi = { '/api': { target: process.env.PUSH_DEV_API || 'http://127.0.0.1:3000', changeOrigin: true } }
+
 export default defineConfig({
   plugins: [react(), tailwindcss(), precacheServiceWorker()],
+  server: { proxy: localApi },
+  preview: { proxy: localApi },
   test: {
     environment: 'jsdom',
-    include: ['src/**/*.test.{ts,tsx}'],
+    include: ['src/**/*.test.{ts,tsx}', 'api/**/*.test.js'],
   },
 })

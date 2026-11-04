@@ -8,8 +8,9 @@ import type {
   ID,
   NewEntity,
 } from '../models'
+import { schedulePush } from '../lib/push'
 import { repos } from '../repositories'
-import type { Repository } from '../repositories/repository'
+import type { CreateOptions, Repository } from '../repositories/repository'
 import { isValidEmail } from '../utils/misc'
 import { verifyPassword } from '../utils/password'
 import { createCrudService } from './crud'
@@ -27,17 +28,27 @@ export async function notify(kind: AppNotification['kind'], title: string, body:
     const [settings] = await repos.settings.list()
     if (settings && settings[NOTIFY_FLAG[kind]] === false) return
   }
-  await repos.notifications.create({ kind, title, body, readBy: [] })
+  await repos.notifications.create({ kind, title, body, readBy: [], pushedAt: null })
+  schedulePush()
 }
 
+const notificationsBase = createCrudService<AppNotification>(repos.notifications, {
+  label: 'Notificação',
+  feminine: true,
+  activityKind: 'aviso',
+  nameOf: (n) => n.title,
+  silent: true,
+})
+
 export const notificationsService = {
-  ...createCrudService<AppNotification>(repos.notifications, {
-    label: 'Notificação',
-    feminine: true,
-    activityKind: 'aviso',
-    nameOf: (n) => n.title,
-    silent: true,
-  }),
+  ...notificationsBase,
+
+  /** Toda notificação nasce "não enviada" e o servidor leva ao aparelho de quem pode vê-la (ver lib/push.ts). */
+  async create(data: NewEntity<AppNotification>, options?: CreateOptions) {
+    const created = await notificationsBase.create({ pushedAt: null, ...data }, options)
+    schedulePush()
+    return created
+  },
 
   async markRead(id: ID, userId: ID) {
     const item = await repos.notifications.get(id)

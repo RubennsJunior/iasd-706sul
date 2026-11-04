@@ -15,6 +15,7 @@ import {
 import type { LucideIcon } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { Switch } from '../../components/forms/Controls'
+import { DevicePush } from '../../components/notifications/DevicePush'
 import { Badge } from '../../components/ui/Badge'
 import { Button, IconButton } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
@@ -97,6 +98,7 @@ export function NotificationsPage() {
 
         {tab === 'central' || !canConfigure ? (
           <>
+            <DevicePush />
             <div className="flex flex-wrap items-center justify-between gap-2">
               <p className="text-sm text-muted">
                 {unread > 0 ? `${unread} não lida(s)` : 'Tudo em dia — nenhuma notificação pendente.'}

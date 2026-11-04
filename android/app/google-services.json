@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "836595225015",
+    "project_id": "erp-igrejaadventista",
+    "storage_bucket": "erp-igrejaadventista.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:836595225015:android:ec32ca0b19e5505e699832",
+        "android_client_info": {
+          "package_name": "br.com.igrejasda.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAeKzADSYdCAKYf9QDh7O06GmXq7oZEFtE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

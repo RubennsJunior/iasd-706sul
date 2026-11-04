@@ -341,3 +341,72 @@ describe('primeiro acesso do administrador (admin@admin.com)', () => {
     await assertFails(setDoc(ref(db, ['members', 'm1'], FRESH + '2'), { fullName: 'x' }))
   })
 })
+
+describe('aparelhos das notificações (devices)', () => {
+  const web = (uid, id, extra = {}) => ({ id, userId: uid, kind: 'web', label: 'Android (navegador)', subscription: { endpoint: `https://push.example/${id}`, keys: { p256dh: 'k', auth: 'a' } }, updatedAt: '2026-11-04T00:00:00.000Z', ...extra })
+  const android = (uid, id, extra = {}) => ({ id, userId: uid, kind: 'android', label: 'Aplicativo Android', token: `token-${id}`, updatedAt: '2026-11-04T00:00:00.000Z', ...extra })
+  const dev = (db, id) => ref(db, ['devices', id])
+
+  it('cada pessoa cadastra e renova o próprio aparelho (navegador ou Android)', async () => {
+    await assertSucceeds(setDoc(dev(as('u-membro'), 'd-web'), web('u-membro', 'd-web')))
+    await assertSucceeds(setDoc(dev(as('u-membro'), 'd-web'), web('u-membro', 'd-web', { updatedAt: '2026-11-05T00:00:00.000Z' })))
+    await assertSucceeds(setDoc(dev(as('u-lider'), 'd-and'), android('u-lider', 'd-and')))
+    await assertSucceeds(setDoc(dev(as('u-sec'), 'd-sec'), web('u-sec', 'd-sec')))
+  })
+
+  it('NÃO cadastra aparelho em nome de outra pessoa, de visitante, de usuário inativo ou sem perfil', async () => {
+    await assertFails(setDoc(dev(as('u-membro'), 'd-x1'), web('u-lider', 'd-x1')))
+    await assertFails(setDoc(dev(visitor(), 'd-x2'), web('u-membro', 'd-x2')))
+    await assertFails(setDoc(dev(as('u-off'), 'd-x3'), web('u-off', 'd-x3')))
+    await assertFails(setDoc(dev(as('u-sem-perfil'), 'd-x4'), web('u-sem-perfil', 'd-x4')))
+  })
+
+  it('NÃO aceita código diferente do id, campo extra, tipo inválido ou dados incompletos', async () => {
+    const db = () => as('u-membro')
+    await assertFails(setDoc(dev(db(), 'd-y1'), web('u-membro', 'outro-id')))
+    await assertFails(setDoc(dev(db(), 'd-y2'), web('u-membro', 'd-y2', { roleId: 'role-admin' })))
+    await assertFails(setDoc(dev(db(), 'd-y3'), web('u-membro', 'd-y3', { kind: 'ios' })))
+    await assertFails(setDoc(dev(db(), 'd-y4'), web('u-membro', 'd-y4', { subscription: { endpoint: 'https://x', keys: 'nada' } })))
+    await assertFails(setDoc(dev(db(), 'd-y5'), web('u-membro', 'd-y5', { subscription: { endpoint: 'x'.repeat(1200), keys: {} } })))
+    await assertFails(setDoc(dev(db(), 'd-y6'), android('u-membro', 'd-y6', { token: 'x'.repeat(600) })))
+    await assertFails(setDoc(dev(db(), 'd-y7'), { id: 'd-y7', userId: 'u-membro', kind: 'android' }))
+  })
+
+  it('lê só o próprio aparelho e não lista os dos outros', async () => {
+    await assertSucceeds(setDoc(dev(as('u-membro'), 'd-ler'), web('u-membro', 'd-ler')))
+    await assertSucceeds(getDoc(dev(as('u-membro'), 'd-ler')))
+    await assertFails(getDoc(dev(as('u-lider'), 'd-ler')))
+    await assertFails(getDoc(dev(visitor(), 'd-ler')))
+    await assertSucceeds(getDoc(dev(as('u-membro'), 'd-nao-existe')))
+    await assertFails(list(as('u-membro'), 'devices'))
+    await assertFails(list(as('u-admin'), 'devices'))
+  })
+
+  it('apaga só o próprio aparelho (ao sair da conta); o servidor limpa os demais', async () => {
+    await assertSucceeds(setDoc(dev(as('u-membro'), 'd-del'), web('u-membro', 'd-del')))
+    await assertFails(deleteDoc(dev(as('u-lider'), 'd-del')))
+    await assertFails(deleteDoc(dev(as('u-admin'), 'd-del')))
+    await assertFails(deleteDoc(dev(visitor(), 'd-del')))
+    await assertSucceeds(deleteDoc(dev(as('u-membro'), 'd-del')))
+  })
+
+  it('o aparelho passa para quem entra depois na mesma conta do navegador, e quem saiu deixa de poder apagá-lo', async () => {
+    await assertSucceeds(setDoc(dev(as('u-membro'), 'd-troca'), web('u-membro', 'd-troca')))
+    await assertSucceeds(setDoc(dev(as('u-lider'), 'd-troca'), web('u-lider', 'd-troca')))
+    await assertFails(deleteDoc(dev(as('u-membro'), 'd-troca')))
+    await assertSucceeds(deleteDoc(dev(as('u-lider'), 'd-troca')))
+  })
+
+  it('a configuração do envio (chaves do servidor) não é legível nem gravável por nenhum perfil', async () => {
+    for (const who of [visitor(), as('u-membro'), as('u-sec'), as('u-admin')]) {
+      await assertFails(getDoc(ref(who, ['pushConfig', 'vapid'])))
+      await assertFails(setDoc(ref(who, ['pushConfig', 'vapid']), { publicKey: 'x', privateKey: 'y' }))
+    }
+  })
+
+  it('a marca de envio da notificação continua só com o servidor: quem lê/marca como lida não mexe nela', async () => {
+    await assertSucceeds(updateDoc(ref(as('u-membro'), ['notifications', 'n-1']), { readBy: ['u-membro'] }))
+    await assertFails(updateDoc(ref(as('u-membro'), ['notifications', 'n-1']), { pushedAt: null }))
+    await assertFails(updateDoc(ref(visitor(), ['notifications', 'n-1']), { pushedAt: 'x' }))
+  })
+})

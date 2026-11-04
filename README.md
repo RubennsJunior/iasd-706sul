@@ -207,6 +207,42 @@ O repositório já traz `vercel.json` (SPA, cabeçalhos do service worker e cach
 - O service worker só é registrado no build de produção (`npm run preview` ou site publicado em https).
 - Instalação: **Menu → Sobre o Aplicativo → Instalar aplicativo** (no iPhone: Compartilhar → Adicionar à Tela de Início).
 
+## Notificações no aparelho (push)
+
+Todas as notificações do aplicativo (cancelamento de evento, nova escala, nova solicitação de cadastro, avisos enviados pela
+secretaria…) também aparecem **na tela do aparelho, mesmo com o app fechado**: no **Android** pelo APK, no **iPhone** pelo PWA
+instalado na tela de início (iOS 16.4 ou mais novo) e no navegador do computador/Android. Recebe quem está ativo e tem
+permissão de **ver Notificações**; quem sai da conta deixa de receber neste aparelho.
+
+**Como funciona.** Cada notificação nasce no app com `pushedAt: null`. Logo depois o app avisa a função `api/push.js` (Vercel,
+plano gratuito), que lê as pendentes no Firestore, marca cada uma como enviada (só uma chamada consegue, então ninguém
+recebe duas vezes) e envia aos aparelhos cadastrados em `igrejas/<igreja>/devices`: **Web Push** (navegador e iPhone, com chaves
+VAPID que a própria função gera e guarda) e **FCM** (APK). Notificações com mais de 48 horas nunca são enviadas. A tela
+**Notificações → Central** tem o cartão *Notificações neste aparelho* (ativar, testar, desativar, com as instruções para
+Android, iPhone e navegador) e o **Início** convida a ativar. O iPhone só pede permissão depois de um toque do usuário, por isso
+o botão.
+
+**Configuração (uma vez só).** Sem o passo 1 o app avisa "o envio de notificações ainda não foi configurado no servidor".
+
+1. **Servidor (obrigatório).** *Firebase → Configurações do projeto → Contas de serviço → Gerar nova chave privada* (baixa um
+   `.json`). Na Vercel: *Settings → Environment Variables* → nome `FIREBASE_SERVICE_ACCOUNT`, valor = **todo o conteúdo do
+   `.json`** → *Save* → *Deployments → Redeploy*. (Alternativa: o mesmo conteúdo em base64 em `FIREBASE_SERVICE_ACCOUNT_BASE64`.)
+   Esse arquivo é uma senha da sua conta Firebase: não coloque no repositório nem em conversas. Opcionais: `FIREBASE_TENANT`
+   (padrão `iasd-706-sul`) e `PUSH_SUBJECT` (contato do Web Push; padrão, o endereço do site).
+2. **Regras.** Publique o `firestore.rules` (ganhou a coleção `devices`: cada pessoa só mexe nos próprios aparelhos; a
+   configuração das chaves do envio não é legível por nenhum aplicativo).
+3. **Android (APK).** *Firebase → Configurações do projeto → Seus apps → Adicionar app → Android*, pacote
+   `br.com.igrejasda.app` → baixe o `google-services.json` e coloque em `android/app/google-services.json` (não é segredo) →
+   `npm run build:apk` e instale. Sem esse arquivo o APK funciona normalmente, mas o cartão avisa que as notificações do Android
+   ainda não foram preparadas (o `build:apk` mostra "Push do Android: ligado/desligado").
+4. **iPhone.** No Safari: Compartilhar → *Adicionar à Tela de Início* → abrir o IASD pelo ícone novo → entrar → *Notificações →
+   Ativar notificações*. No Safari comum (fora da tela de início) o iPhone não oferece notificações.
+
+**Testar no desenvolvimento.** `npm run dev:api` roda a mesma função em `http://127.0.0.1:3000/api/push` (o `vite` e o
+`vite preview` encaminham `/api` para lá). Contra o emulador do Firestore:
+`FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 FIREBASE_PROJECT_ID=demo-igreja npm run dev:api`. O service worker só existe no build
+(`npm run build` + `npm run preview`). `src/lib/push*.test.ts` e `api/_lib/pushCore.test.js` cobrem o cliente e o envio.
+
 ## APK (Android)
 
 O projeto Android já foi gerado em `android/` (Capacitor), com ícone e tela de abertura nas cores da igreja. O botão

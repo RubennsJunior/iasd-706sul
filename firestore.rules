@@ -221,6 +221,26 @@ service cloud.firestore {
         allow delete: if can('liturgia', 'delete');
       }
 
+      // ---------- aparelhos que recebem notificações (push) ----------
+      // Cada pessoa cadastra, renova e apaga só os próprios aparelhos (o código é um hash da inscrição/token). Quem envia as
+      // notificações é o servidor (api/push.js, com a conta de serviço), que não passa por estas regras.
+      match /devices/{id} {
+        allow get: if request.auth != null && (resource == null || resource.data.userId == request.auth.uid);
+        allow create, update: if active()
+                              && request.resource.data.userId == request.auth.uid
+                              && request.resource.data.id == id
+                              && request.resource.data.keys().hasOnly(['id', 'userId', 'kind', 'label', 'subscription', 'token', 'updatedAt'])
+                              && ((request.resource.data.kind == 'web'
+                                   && request.resource.data.subscription is map
+                                   && request.resource.data.subscription.endpoint is string
+                                   && request.resource.data.subscription.endpoint.size() <= 1000
+                                   && request.resource.data.subscription.keys is map)
+                                  || (request.resource.data.kind == 'android'
+                                      && request.resource.data.token is string
+                                      && request.resource.data.token.size() <= 500));
+        allow delete: if active() && resource.data.userId == request.auth.uid;
+      }
+
       // ---------- avisos e atividades ----------
       match /notifications/{id} {
         allow read: if can('notificacoes', 'view');

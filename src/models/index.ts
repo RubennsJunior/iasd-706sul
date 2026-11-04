@@ -349,6 +349,10 @@ export interface AppNotification extends Entity {
   body: string
   kind: NotificationKind
   readBy: ID[]
+  /** Quando o servidor enviou a notificação aos aparelhos; `null` = ainda não enviada (o servidor cuida disso). */
+  pushedAt?: string | null
+  /** Resultado do envio, anotado pelo servidor ("enviada" ou "antiga" quando passou muito tempo). */
+  pushStatus?: string
 }
 
 export type ContactKind = 'telefone' | 'whatsapp' | 'email' | 'endereco' | 'site' | 'rede-social'

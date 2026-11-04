@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { BOOTSTRAP_ADMIN_EMAIL } from '../config'
 import { cloudEnabled } from '../lib/firebase'
 import { accessChanged, createFirstProfile, setAccessReady, settleWrites, signIn, signOutNow, useSession, watchDoc } from '../lib/cloudSession'
+import { releaseDevice } from '../lib/push'
 import type { ActionKey, AppUser, Member, ModuleKey, Role } from '../models'
 import { effectivePermissions, fullMatrix, hasPermission } from '../models/permissions'
 import { SESSION_KEY, prepareCloud, repos, storage } from '../repositories'
@@ -23,7 +24,8 @@ interface AuthValue {
   login(email: string, password: string): Promise<void>
   /** Troca de usuário sem senha — recurso de demonstração (só no modo local) para testar os perfis. */
   switchUser(userId: string): void
-  logout(): void
+  /** Sai da conta; na nuvem espera o aparelho deixar de receber as notificações de quem saiu. */
+  logout(): void | Promise<void>
   can(module: ModuleKey, action?: ActionKey): boolean
   /** Abrangência do perfil: em quais equipes e departamentos as permissões valem. */
   scope: Scope
@@ -252,9 +254,11 @@ function CloudAuthProvider({ children }: { children: ReactNode }) {
         await signIn(emailInput, password)
       },
       switchUser: () => undefined,
-      logout() {
+      async logout() {
         setMessage('')
-        void signOutNow()
+        // este aparelho deixa de receber as notificações de quem sai (ainda logado, para o banco aceitar a exclusão)
+        await releaseDevice()
+        await signOutNow()
       },
       can: (module, action = 'view') => hasPermission(effectivePermissions(user, role), module, action),
       scope,

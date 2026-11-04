@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useIsDesktop } from '../hooks/useMediaQuery'
+import { PushBridge } from '../components/notifications/PushBridge'
 import { LogoMark } from '../components/ui/Logo'
 import { DesktopShell } from './DesktopShell'
 import { MobileShell } from './MobileShell'
@@ -27,5 +28,10 @@ export function AppLayout() {
   }
   if (!user) return <Navigate to="/login" replace state={{ from: location.pathname }} />
 
-  return <PageMetaProvider>{desktop ? <DesktopShell /> : <MobileShell />}</PageMetaProvider>
+  return (
+    <PageMetaProvider>
+      <PushBridge />
+      {desktop ? <DesktopShell /> : <MobileShell />}
+    </PageMetaProvider>
+  )
 }

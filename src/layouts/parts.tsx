@@ -125,9 +125,9 @@ export function AccountButton({ showName, className }: { showName?: boolean; cla
           icon={LogOut}
           className="mt-6 w-full"
           onClick={() => {
-            logout()
             setOpen(false)
-            navigate('/login')
+            // na nuvem, primeiro o aparelho deixa de receber as notificações de quem sai; depois vai para a entrada
+            void Promise.resolve(logout()).then(() => navigate('/login'))
           }}
         >
           Sair

@@ -67,7 +67,18 @@ function signingKey() {
   return { keystore, password: readFileSync(passwordFile, 'utf8').trim() }
 }
 
-const env = { ...process.env, JAVA_HOME: javaHome, ANDROID_HOME: sdk, Path: `${join(javaHome, 'bin')};${process.env.Path ?? process.env.PATH ?? ''}` }
+// Notificações no Android (FCM) só funcionam com o google-services.json do Firebase dentro do projeto Android (veja o README).
+// Sem o arquivo o APK sai igual, mas o aplicativo avisa que as notificações ainda não estão preparadas, em vez de falhar.
+const androidPush = existsSync(join(androidDir, 'app', 'google-services.json'))
+console.log(androidPush ? 'Push do Android: ligado (google-services.json encontrado).' : 'Push do Android: desligado (falta android/app/google-services.json).')
+
+const env = {
+  ...process.env,
+  VITE_ANDROID_PUSH: androidPush ? '1' : '',
+  JAVA_HOME: javaHome,
+  ANDROID_HOME: sdk,
+  Path: `${join(javaHome, 'bin')};${process.env.Path ?? process.env.PATH ?? ''}`,
+}
 
 // 1. Site (tsc + vite) e cópia para o projeto Android
 run(windows ? 'npm.cmd' : 'npm', ['run', 'cap:sync'], { cwd: root, env, shell: windows })
