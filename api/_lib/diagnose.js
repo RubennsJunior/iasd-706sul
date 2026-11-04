@@ -11,5 +11,10 @@ export function diagnose(error) {
   else if (code === '7' || /PERMISSION_DENIED|insufficient permission/i.test(text)) motivo = 'firestore-sem-permissao'
   else if (code === '5' || /NOT_FOUND/.test(text)) motivo = 'firestore-nao-encontrado'
   else if (code === '14' || /UNAVAILABLE|ETIMEDOUT|ENOTFOUND|ECONNRESET|EAI_AGAIN/i.test(text)) motivo = 'rede'
-  return { motivo, detalhe: text.replace(/\s+/g, ' ').trim().slice(0, 140) }
+  // Um JSON inválido vem com um pedaço do próprio valor da variável na mensagem: nunca devolver esse trecho.
+  const detalhe =
+    error instanceof SyntaxError
+      ? 'O valor de FIREBASE_SERVICE_ACCOUNT não é um JSON válido: deve ser o conteúdo do arquivo .json (começa por "{"), e não o nome do arquivo.'
+      : text.replace(/\s+/g, ' ').trim().slice(0, 140)
+  return { motivo, detalhe }
 }

@@ -151,6 +151,16 @@ describe('ativar', () => {
     await expect(enablePush('u1')).rejects.toThrow(/internet/)
   })
 
+  it('servidor com problema de configuração: o app diz qual (e não "verifique a internet")', async () => {
+    vi.stubGlobal('fetch', server({ configured: true, error: 'x', motivo: 'conta-de-servico-invalida', detalhe: 'y' }, false))
+    await expect(enablePush('u1')).rejects.toThrow(/FIREBASE_SERVICE_ACCOUNT.*conteúdo do arquivo \.json/)
+    vi.stubGlobal('fetch', server({ configured: true, motivo: 'firestore-sem-permissao' }, false))
+    await expect(enablePush('u1')).rejects.toThrow(/permissão no Firestore/)
+    vi.stubGlobal('fetch', server({ configured: true, motivo: 'coisa-nova' }, false))
+    await expect(enablePush('u1')).rejects.toThrow(/problema de configuração \(coisa-nova\)/)
+    expect(fs.setDoc).not.toHaveBeenCalled()
+  })
+
   it('inscrição antiga com outra chave do servidor é trocada', async () => {
     const stale = {
       endpoint: 'https://fcm.googleapis.com/fcm/send/velha',

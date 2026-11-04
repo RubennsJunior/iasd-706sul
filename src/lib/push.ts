@@ -128,14 +128,30 @@ const standalone = () => window.matchMedia?.('(display-mode: standalone)').match
 /* Servidor e banco                                                                                                    */
 /* ----------------------------------------------------------------------------------------------------------------- */
 
+/** O que dizer a quem usa o app quando o servidor de notificações responde que está com problema de configuração. */
+export function serverProblem(motivo: string): string {
+  const known: Record<string, string> = {
+    'conta-de-servico-invalida':
+      'A chave do servidor de notificações está incorreta na Vercel (variável FIREBASE_SERVICE_ACCOUNT): ela deve ser o conteúdo do arquivo .json, e não o nome do arquivo. Avise o administrador.',
+    'firestore-sem-permissao': 'A conta de serviço do servidor de notificações não tem permissão no Firestore. Avise o administrador.',
+    'firestore-nao-encontrado': 'O servidor de notificações não achou o banco de dados do Firebase. Avise o administrador.',
+    'api-do-firebase-desativada': 'Uma API do Firebase está desativada para o servidor de notificações. Avise o administrador.',
+    rede: 'O servidor de notificações não conseguiu falar com o Firebase agora. Tente de novo em instantes.',
+  }
+  return known[motivo] ?? `O servidor de notificações está com um problema de configuração (${motivo}). Avise o administrador.`
+}
+
 async function fetchKey(): Promise<{ configured: boolean; publicKey?: string }> {
+  let response: Response
   try {
-    const response = await fetch(PUSH_API, { cache: 'no-store' })
-    if (!response.ok) throw new Error('resposta inválida')
-    return (await response.json()) as { configured: boolean; publicKey?: string }
+    response = await fetch(PUSH_API, { cache: 'no-store' })
   } catch {
     throw new Error(MESSAGES.offline)
   }
+  const body = (await response.json().catch(() => undefined)) as { configured: boolean; publicKey?: string; motivo?: string } | undefined
+  if (body?.motivo) throw new Error(serverProblem(body.motivo))
+  if (!response.ok || !body) throw new Error(MESSAGES.offline)
+  return body
 }
 
 const deviceRef = (id: string) => doc(getDb(), 'igrejas', FIREBASE_TENANT, 'devices', id)

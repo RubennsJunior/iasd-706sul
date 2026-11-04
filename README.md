@@ -229,6 +229,11 @@ o botão.
    `.json`** → *Save* → *Deployments → Redeploy*. (Alternativa: o mesmo conteúdo em base64 em `FIREBASE_SERVICE_ACCOUNT_BASE64`.)
    Esse arquivo é uma senha da sua conta Firebase: não coloque no repositório nem em conversas. Opcionais: `FIREBASE_TENANT`
    (padrão `iasd-706-sul`) e `PUSH_SUBJECT` (contato do Web Push; padrão, o endereço do site).
+   **Como conferir:** abra `https://iasd-706sul.vercel.app/api/push` no navegador. `{"configured":true,"publicKey":"…"}`
+   significa que está tudo certo. Se vier `"motivo":"conta-de-servico-invalida"`, o valor da variável não é o JSON: abra o
+   `.json` no Bloco de Notas, copie **todo o texto** (começa por `{`) e cole como valor (e não o nome do arquivo). Outros
+   motivos: `firestore-sem-permissao` (a conta de serviço é de outro projeto ou perdeu o acesso), `api-do-firebase-desativada`,
+   `firestore-nao-encontrado` e `rede`. O app também mostra esse motivo ao tocar em *Ativar notificações*.
 2. **Regras.** Publique o `firestore.rules` (ganhou a coleção `devices`: cada pessoa só mexe nos próprios aparelhos; a
    configuração das chaves do envio não é legível por nenhum aplicativo).
 3. **Android (APK).** *Firebase → Configurações do projeto → Seus apps → Adicionar app → Android*, pacote

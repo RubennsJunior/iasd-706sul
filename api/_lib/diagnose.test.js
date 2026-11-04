@@ -22,6 +22,20 @@ describe('diagnóstico de falha do servidor de notificações', () => {
     expect(result.detalhe).not.toMatch(/\n/)
   })
 
+  it('JSON inválido nunca devolve o começo do valor da variável (pode ser parte de um segredo)', () => {
+    let erro
+    try {
+      JSON.parse('erp-igrejaadventista-firebase-adminsdk-abc.json')
+    } catch (e) {
+      erro = e
+    }
+    expect(erro.message).toContain('erp-igreja') // o próprio Node coloca o trecho na mensagem…
+    const result = diagnose(erro)
+    expect(result.motivo).toBe('conta-de-servico-invalida')
+    expect(result.detalhe).not.toContain('erp-igreja') // …mas a resposta do servidor não
+    expect(result.detalhe).toMatch(/conteúdo do arquivo \.json/)
+  })
+
   it('aceita qualquer coisa que seja lançada', () => {
     expect(diagnose(undefined).motivo).toBe('desconhecido')
     expect(diagnose('texto solto').detalhe).toBe('texto solto')
