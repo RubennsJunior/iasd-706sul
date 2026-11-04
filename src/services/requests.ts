@@ -50,12 +50,16 @@ async function checkNewRequest(data: Partial<NewEntity<MemberRequest>>) {
   if (!email) throw new Error('Informe o e-mail de contato.')
   if (!isValidEmail(email) || !SAFE_EMAIL.test(email)) throw new Error('Informe um e-mail válido.')
 
-  const pending = (await repos.requests.list()).filter((r) => r.status === 'pendente')
-  if (pending.some((r) => r.email && sameEmail(r.email, email))) {
-    throw new Error('Já existe uma solicitação em análise com este e-mail. Aguarde o retorno da secretaria.')
-  }
-  if (pending.some((r) => digits(r.phone) === digits(data.phone ?? ''))) {
-    throw new Error('Já existe uma solicitação em análise com este telefone. Aguarde o retorno da secretaria.')
+  // Quem não pode ler as solicitações (visitante) só enxerga no cache do aparelho o que ele mesmo enviou, e isso fica
+  // velho (a secretaria pode ter recusado o pedido): para ele quem decide é o servidor, pelas regras.
+  if (canSeePeople()) {
+    const pending = (await repos.requests.list()).filter((r) => r.status === 'pendente')
+    if (pending.some((r) => r.email && sameEmail(r.email, email))) {
+      throw new Error('Já existe uma solicitação em análise com este e-mail. Aguarde o retorno da secretaria.')
+    }
+    if (pending.some((r) => digits(r.phone) === digits(data.phone ?? ''))) {
+      throw new Error('Já existe uma solicitação em análise com este telefone. Aguarde o retorno da secretaria.')
+    }
   }
   const member = await findMemberByEmail(email)
   if (member) throw new Error('Este e-mail já está cadastrado como membro. Se foi você, fale com a secretaria.')
@@ -116,7 +120,8 @@ export const requestsService = {
       status: 'pendente' as const,
     }
     const id = requestIdFor(fresh.email)
-    const previous = await repos.requests.get(id) // o visitante não enxerga as solicitações; quem está logado, sim
+    // Só quem pode ler as solicitações confere o pedido anterior; o visitante deixa o servidor decidir (ver `checkNewRequest`).
+    const previous = canSeePeople() ? await repos.requests.get(id) : undefined
     try {
       if (previous?.status === 'recusada') {
         await checkNewRequest(fresh)

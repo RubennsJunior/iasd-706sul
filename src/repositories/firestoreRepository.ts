@@ -285,7 +285,9 @@ export function createFirestoreRepository<T extends Entity>(
         return local.create(data)
       }
       const id = data.id ?? uid(idPrefix)
-      if (current.some((item) => item.id === id)) throw new Error('Já existe um registro com este código.')
+      // Num envio que o servidor confirma, só o servidor sabe se o código já existe: a lista local de quem não pode
+      // ler a coleção traz no máximo o que ele mesmo enviou antes (cache em disco), e isso não deve barrar um reenvio.
+      if (!createOptions?.confirm && current.some((item) => item.id === id)) throw new Error('Já existe um registro com este código.')
       const stamp = now()
       const item = { ...(await prepare(data as Partial<T>)), id, createdAt: stamp, updatedAt: stamp } as T
       const sent = commit(id, item, () => setDoc(docRef(id), item), !createOptions?.confirm)

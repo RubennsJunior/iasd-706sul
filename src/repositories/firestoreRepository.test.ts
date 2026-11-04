@@ -293,6 +293,87 @@ describe('repositório Firestore', () => {
     expect([...fake.store.keys()].filter((k) => k.startsWith(PATH(name) + '/')).sort()).toEqual([PATH(name, 'i-1'), PATH(name, 'i-2')])
   })
 
+  describe('envio com confirmação do servidor (cadastro público)', () => {
+    it('só conclui depois que o servidor confirma', async () => {
+      const { name, repo } = fresh()
+      seedCloud(name)
+      await repo.list()
+      fake.state.writeDelay = true
+      let done = false
+      const sending = repo.create({ id: 'req-a', name: 'Pedido' }, { confirm: true }).then((item) => ((done = true), item))
+      await tick()
+      expect(done).toBe(false)
+      fake.pendingAcks.forEach((ack) => ack())
+      expect((await sending).id).toBe('req-a')
+      expect(fake.store.has(PATH(name, 'req-a'))).toBe(true)
+    })
+
+    it('se o servidor recusa, lança o erro dele, desfaz na tela e não mostra o aviso geral de falha', async () => {
+      const { name, repo } = fresh()
+      seedCloud(name)
+      await repo.list()
+      const warned = vi.fn()
+      window.addEventListener('cloud:write-error', warned)
+      fake.state.failWrite = 'permission-denied'
+      await expect(repo.create({ id: 'req-b', name: 'Pedido' }, { confirm: true })).rejects.toMatchObject({ code: 'permission-denied' })
+      await tick()
+      expect(await repo.get('req-b')).toBeUndefined()
+      expect(warned).not.toHaveBeenCalled()
+      window.removeEventListener('cloud:write-error', warned)
+    })
+
+    it('uma gravação comum recusada continua avisando', async () => {
+      const { name, repo } = fresh()
+      seedCloud(name)
+      await repo.list()
+      const warned = vi.fn()
+      window.addEventListener('cloud:write-error', warned)
+      fake.state.failWrite = 'permission-denied'
+      await repo.create({ name: 'Comum' })
+      await tick()
+      expect(warned).toHaveBeenCalledTimes(1)
+      window.removeEventListener('cloud:write-error', warned)
+    })
+
+    it('sem conexão com a nuvem nunca guarda só no aparelho', async () => {
+      const { repo } = fresh()
+      fake.state.failListen = 'permission-denied'
+      fake.state.rootDenied = true
+      await expect(repo.create({ id: 'req-c', name: 'Pedido' }, { confirm: true })).rejects.toMatchObject({ code: 'unavailable' })
+      expect(fake.calls).toHaveLength(0)
+      expect(await repo.get('req-c')).toBeUndefined()
+    })
+
+    it('um registro velho no cache local não barra o reenvio: quem decide é o servidor', async () => {
+      const { name, repo } = fresh()
+      seedCloud(name)
+      fake.store.set(PATH(name, 'req-d'), { name: 'Enviado antes (visto no cache)' })
+      await repo.list()
+      // comum: o aplicativo recusa o código repetido sem falar com o servidor
+      await expect(repo.create({ id: 'req-d', name: 'Outra vez' })).rejects.toThrow(/código/)
+      fake.calls.length = 0
+      // confirmado: segue para o servidor, que aceita ou recusa pelas regras
+      await expect(repo.create({ id: 'req-d', name: 'Reenvio' }, { confirm: true })).resolves.toMatchObject({ id: 'req-d' })
+      expect(fake.calls.at(-1)).toMatchObject({ op: 'set', path: PATH(name, 'req-d') })
+    })
+
+    it('sem resposta do servidor por 15 segundos, avisa com o código "timeout"', async () => {
+      const { name, repo } = fresh()
+      seedCloud(name)
+      await repo.list()
+      vi.useFakeTimers()
+      try {
+        fake.state.writeDelay = true
+        const sending = repo.create({ id: 'req-e', name: 'Pedido' }, { confirm: true })
+        const outcome = expect(sending).rejects.toMatchObject({ code: 'timeout' })
+        await vi.advanceTimersByTimeAsync(15_000)
+        await outcome
+      } finally {
+        vi.useRealTimers()
+      }
+    })
+  })
+
   it('aplica a preparação dos dados (ex.: senha protegida) ao criar e editar', async () => {
     const name = `prep${++counter}`
     const repo = createFirestoreRepository<Item>(name, seed, 'it', {

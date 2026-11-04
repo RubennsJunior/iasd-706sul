@@ -20,6 +20,7 @@ function PublicFrame() {
 
   return (
     <div className="min-h-dvh bg-page">
+      <div aria-hidden className="status-strip pointer-events-none fixed inset-x-0 top-0 z-[60] bg-navy-950" />
       <header className="relative isolate overflow-hidden bg-linear-to-br/srgb from-navy-950 via-navy-900 to-navy-800 pb-14 text-white safe-top">
         <div
           aria-hidden
@@ -65,7 +66,7 @@ function PublicFrame() {
         <HeaderWave />
       </header>
 
-      <main className="relative -mt-5 mx-auto w-full max-w-4xl px-4 pb-16">
+      <main className="relative -mt-5 mx-auto w-full max-w-4xl px-4 pb-public">
         <RouteErrorBoundary>
           <Suspense fallback={<PageLoading />}>
             <Outlet />

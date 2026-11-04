@@ -52,7 +52,7 @@ export function PhotoField({
       <div
         className={cn(
           'relative shrink-0 overflow-hidden bg-royal-50 ring-4 ring-royal-50',
-          shape === 'round' ? 'size-24 rounded-full' : 'aspect-video w-full rounded-2xl sm:w-64',
+          shape === 'round' ? 'size-24 rounded-full' : 'aspect-video w-full max-w-sm rounded-2xl',
         )}
       >
         {value ? <img src={value} alt="" className="absolute inset-0 size-full object-cover" /> : fallback}

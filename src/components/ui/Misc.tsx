@@ -199,7 +199,7 @@ export function Fab({ label, onClick }: { label: string; onClick(): void }) {
     <button
       type="button"
       onClick={onClick}
-      className="fixed bottom-24 right-4 z-30 inline-flex items-center gap-2 rounded-full bg-navy-900 px-5 py-3.5 text-sm font-semibold text-white shadow-float transition-transform active:scale-95 lg:hidden"
+      className="above-nav fixed right-4 z-30 inline-flex items-center gap-2 rounded-full bg-navy-900 px-5 py-3.5 text-sm font-semibold text-white shadow-float transition-transform active:scale-95 lg:hidden"
     >
       <Plus className="size-5" />
       {label}

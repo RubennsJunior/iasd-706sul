@@ -63,7 +63,7 @@ function Responsible({ name }: { name: string }) {
 
 function ActionCard({ event, action, canManage }: { event: ChurchEvent; action: EventAction; canManage: boolean }) {
   const toast = useToast()
-  const { member } = useAuth()
+  const { member, user, can } = useAuth()
   const { members, nameOf } = useMemberNames()
   const open = acceptsActions(event, todayISO())
   const state = actionState(action, member?.id)
@@ -138,7 +138,19 @@ function ActionCard({ event, action, canManage }: { event: ChurchEvent; action: 
               </Button>
             )
           ) : (
-            <p className="text-xs text-muted">Seu usuário não está ligado a um cadastro de membro. Peça à secretaria para vincular.</p>
+            <p className="text-xs text-muted">
+              Seu usuário ainda não está ligado a um cadastro de membro, e é por ele que se escolhe uma ação.{' '}
+              {user && can('usuarios', 'edit') ? (
+                <>
+                  <Link to={`/usuarios/${encodeURIComponent(user.id)}/editar`} className="font-semibold text-royal-600 hover:underline">
+                    Abrir meu usuário
+                  </Link>{' '}
+                  e salvar: o cadastro de membro é criado ou ligado na hora.
+                </>
+              ) : (
+                'Peça à secretaria para ligar o seu usuário a um membro.'
+              )}
+            </p>
           )}
           {canManage && open && candidates.length > 0 && !state.full && (
             <div className="min-w-48 flex-1 sm:max-w-xs">

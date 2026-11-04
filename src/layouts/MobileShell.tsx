@@ -104,8 +104,9 @@ export function MobileShell() {
   const typing = useKeyboardOpen()
   return (
     <div className="min-h-dvh bg-page">
+      <div aria-hidden className="status-strip pointer-events-none fixed inset-x-0 top-0 z-[60] bg-navy-950" />
       <MobileHeader />
-      <main className="relative -mt-5 px-4 pb-32">
+      <main className="relative -mt-5 px-4 pb-nav">
         <RouteErrorBoundary>
           <Suspense fallback={<PageLoading />}>
             <Outlet />

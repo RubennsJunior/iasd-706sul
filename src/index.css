@@ -74,6 +74,27 @@ button:not(:disabled) {
   padding-top: max(env(safe-area-inset-top, 0px), var(--safe-area-inset-top, 0px));
 }
 
+/*
+ * Telas de ponta a ponta (celular e tablet com barra de tarefas): a barra inferior cresce com a área segura, então o que
+ * fica acima dela e o fim do conteúdo sobem junto; e uma faixa atrás da barra de status impede o conteúdo de rolar
+ * por baixo do relógio e dos ícones.
+ */
+.above-nav {
+  bottom: calc(6rem + max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px)));
+}
+
+.pb-nav {
+  padding-bottom: calc(8rem + max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px)));
+}
+
+.pb-public {
+  padding-bottom: calc(4rem + max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px)));
+}
+
+.status-strip {
+  height: max(env(safe-area-inset-top, 0px), var(--safe-area-inset-top, 0px));
+}
+
 @keyframes sheet-up {
   from {
     transform: translateY(24px);
