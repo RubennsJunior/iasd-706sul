@@ -13,6 +13,7 @@ import {
   X,
 } from 'lucide-react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
+import { EventPlanView } from '../../components/events/EventPlanView'
 import { Avatar } from '../../components/ui/Avatar'
 import { StatusBadge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
@@ -103,7 +104,7 @@ export function EventDetailPage() {
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <div className="space-y-4 lg:col-span-2">
           <Card className="overflow-hidden">
-            <Cover cover={event.cover} title={event.title} className="h-44 w-full lg:h-56" showTitle={false} />
+            <Cover cover={event.cover} photo={event.photo} title={event.title} className="h-44 w-full lg:h-56" showTitle={false} />
             <div className="space-y-4 p-5">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <StatusBadge kind="event" value={eventPhase(event)} />
@@ -167,6 +168,8 @@ export function EventDetailPage() {
               )}
             </div>
           </Card>
+
+          <EventPlanView event={event} canEdit={canEdit} />
 
           <section>
             <SectionHeader title={`Participantes (${event.participants.length})`} icon={UserPlus} />

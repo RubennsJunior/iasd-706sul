@@ -6,7 +6,7 @@ import { Badge, StatusBadge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
 import { Card, SectionHeader } from '../../components/ui/Card'
 import { EmptyState } from '../../components/ui/Misc'
-import { teamIcon } from '../../components/ui/icons'
+import { TeamEmblem } from '../../components/ui/TeamEmblem'
 import { Select } from '../../components/forms/Select'
 import { useAuth } from '../../contexts/AuthContext'
 import { useConfirm } from '../../contexts/ConfirmContext'
@@ -58,7 +58,6 @@ export function TeamDetailPage() {
     )
   }
 
-  const Icon = teamIcon(team.icon)
   const canEdit = can('equipes', 'edit')
   const department = departments.find((d) => d.id === team.departmentId)
   const teamLeaders = leaders.filter((l) => l.scope === 'equipe' && l.scopeId === team.id)
@@ -108,19 +107,16 @@ export function TeamDetailPage() {
         <div className="space-y-4 lg:col-span-2">
           <Card className="p-5">
             <div className="flex flex-wrap items-start gap-4">
-              <span className="relative grid size-20 shrink-0 place-items-center rounded-full bg-navy-900 text-white ring-4 ring-royal-50">
-                <Icon className="size-9" strokeWidth={1.6} />
-                <span className="absolute inset-x-4 bottom-2 h-0.5 rounded-full bg-gold-500" />
-              </span>
+              <TeamEmblem team={team} size="lg" />
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="text-2xl font-bold text-navy-900">{team.name}</h2>
+                  <h2 className="wrap-anywhere text-2xl font-bold text-navy-900">{team.name}</h2>
                   <StatusBadge kind="active" value={team.status} />
                 </div>
                 <p className="text-ink">{team.description || 'Sem descrição.'}</p>
               </div>
               {canEdit && (
-                <div className="flex gap-2">
+                <div className="flex basis-full gap-2 sm:basis-auto">
                   <Link to={`/equipes/${team.id}/editar`}>
                     <Button size="sm" variant="outline" icon={Pencil}>
                       Editar

@@ -5,10 +5,18 @@ import type { Entity, ID, NewEntity } from '../models'
  * (FirestoreRepository, com sincronização entre aparelhos). A escolha é feita em `repositories/index.ts`
  * — serviços e telas não mudam.
  */
+export interface CreateOptions {
+  /**
+   * Só conclui depois que o servidor aceitar o registro (senão lança o erro dele) e nunca grava apenas neste aparelho.
+   * Usado no envio do cadastro público, que não pode "dar certo" sem chegar à secretaria.
+   */
+  confirm?: boolean
+}
+
 export interface Repository<T extends Entity> {
   list(): Promise<T[]>
   get(id: ID): Promise<T | undefined>
-  create(data: NewEntity<T> & Partial<Pick<T, 'id'>>): Promise<T>
+  create(data: NewEntity<T> & Partial<Pick<T, 'id'>>, options?: CreateOptions): Promise<T>
   update(id: ID, patch: Partial<NewEntity<T>>): Promise<T>
   remove(id: ID): Promise<void>
   /** Notifica alterações (inclusive de outras abas e aparelhos) para as telas recarregarem. */

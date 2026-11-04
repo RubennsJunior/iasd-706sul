@@ -82,12 +82,21 @@ export async function purgeDemoUsers(keepId: ID) {
   }
 }
 
+/** O mesmo e-mail escrito de outro jeito (maiúsculas, espaços nas pontas) conta como repetido. */
+export const sameEmail = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase()
+
 export const membersService = createCrudService<Member>(repos.members, {
   label: 'Membro',
   activityKind: 'membro',
   nameOf: (m) => m.fullName,
-  validate(data) {
-    if (data.email && !isValidEmail(data.email)) throw new Error('Informe um e-mail válido.')
+  async validate(data, existing) {
+    const email = data.email?.trim()
+    if (!email) return
+    if (!isValidEmail(email)) throw new Error('Informe um e-mail válido.')
+    // quem já tinha este e-mail (mesmo repetido em dados antigos) pode continuar sendo editado
+    if (existing?.email && sameEmail(existing.email, email)) return
+    const other = (await repos.members.list()).find((m) => m.id !== existing?.id && m.email && sameEmail(m.email, email))
+    if (other) throw new Error(`Já existe um membro com este e-mail: ${other.fullName}.`)
   },
   async afterSave(member, previous) {
     if (!previous || previous.fullName !== member.fullName) await upsertDirectory(member)
@@ -202,9 +211,10 @@ export async function validateUser(data: Partial<NewEntity<AppUser>>, existing?:
       throw new Error('Mantenha ao menos um administrador ativo no sistema.')
     }
   }
-  const email = data.email?.trim().toLowerCase()
-  if (email && all.some((u) => u.id !== existing?.id && u.email.toLowerCase() === email)) {
-    throw new Error('Já existe um usuário com este e-mail.')
+  const email = data.email?.trim()
+  if (email) {
+    const other = all.find((u) => u.id !== existing?.id && sameEmail(u.email, email))
+    if (other) throw new Error(`Já existe um usuário com este e-mail: ${other.name}.`)
   }
 }
 

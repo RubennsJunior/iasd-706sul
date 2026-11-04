@@ -2,6 +2,9 @@ import { useMemo } from 'react'
 import { UsersRound } from 'lucide-react'
 import { Navigate, useParams } from 'react-router-dom'
 import { FormPage } from '../../components/forms/FormPage'
+import { PhotoField } from '../../components/forms/PhotoField'
+import { teamIcon } from '../../components/ui/icons'
+import { PHOTO_PRESETS } from '../../utils/image'
 import type { FieldDef, Values } from '../../components/forms/types'
 import { useAuth } from '../../contexts/AuthContext'
 import { useToast } from '../../contexts/ToastContext'
@@ -32,6 +35,27 @@ export function TeamFormPage() {
   if (id && !team) return loading ? null : <Navigate to="/equipes" replace />
 
   const fields: FieldDef[] = [
+    {
+      name: 'photo',
+      label: 'Foto da equipe',
+      type: 'custom',
+      render: ({ value, onChange, values }) => {
+        const Icon = teamIcon(String(values.icon || 'users'))
+        return (
+          <PhotoField
+            value={value as string | undefined}
+            onChange={onChange}
+            options={PHOTO_PRESETS.team}
+            label="foto"
+            fallback={
+              <span className="absolute inset-0 grid place-items-center text-navy-800">
+                <Icon className="size-10" strokeWidth={1.5} />
+              </span>
+            }
+          />
+        )
+      },
+    },
     { name: 'name', label: 'Nome da equipe', type: 'text', required: true, span: 2 },
     { name: 'description', label: 'Descrição', type: 'textarea', rows: 2 },
     {
@@ -65,6 +89,7 @@ export function TeamFormPage() {
         foundedAt: todayISO(),
         status: 'ativa',
         icon: 'users',
+        photo: undefined,
         memberIds: [],
       }
 
@@ -81,6 +106,7 @@ export function TeamFormPage() {
       foundedAt: values.foundedAt as string,
       status: values.status as ActiveStatus,
       icon: values.icon as string,
+      photo: (values.photo as string) || undefined,
     }
     if (team) await teamsService.update(team.id, payload)
     else await teamsService.create(payload)

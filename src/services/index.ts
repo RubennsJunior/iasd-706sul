@@ -9,6 +9,7 @@ export {
   membersService,
   memberUsage,
   resolveMember,
+  sameEmail,
   positionsService,
   purgeDemoUsers,
   rolesService,
@@ -31,6 +32,18 @@ export {
 } from './agenda'
 export type { EventFilter, EventPhase } from './agenda'
 export {
+  actionState,
+  acceptsActions,
+  applyActionChoice,
+  cleanPlan,
+  emptyPlan,
+  moveItem,
+  planCount,
+  planOf,
+  validatePlan,
+} from './eventPlan'
+export type { ActionState, EventPlan } from './eventPlan'
+export {
   hymnsService,
   materialsService,
   messagesService,
@@ -46,7 +59,7 @@ export {
   notify,
   settingsService,
 } from './system'
-export { pendingRequests, requestsService } from './requests'
+export { findMemberByEmail, pendingRequests, requestIdFor, requestsService } from './requests'
 export {
   ALL_SCOPE,
   KIND_OF_MODULE,

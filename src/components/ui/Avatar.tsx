@@ -14,15 +14,20 @@ const SIZES = {
   sm: 'size-9 text-xs',
   md: 'size-11 text-sm',
   lg: 'size-14 text-lg',
+  xl: 'size-24 text-3xl',
 }
 
+/** Círculo com a foto da pessoa ou, sem foto, as iniciais do nome. */
 export function Avatar({
   name,
+  photo,
   size = 'md',
   ring,
   className,
 }: {
   name: string
+  /** Foto (data URL) do usuário; sem ela aparecem as iniciais. */
+  photo?: string
   size?: keyof typeof SIZES
   ring?: boolean
   className?: string
@@ -33,14 +38,14 @@ export function Avatar({
     <span
       aria-hidden
       className={cn(
-        'inline-grid shrink-0 place-items-center rounded-full bg-linear-to-br/srgb font-semibold text-white',
+        'inline-grid shrink-0 place-items-center overflow-hidden rounded-full bg-linear-to-br/srgb font-semibold text-white',
         PALETTE[hash % PALETTE.length],
         SIZES[size],
         ring && 'ring-2 ring-white/80',
         className,
       )}
     >
-      {initials(name)}
+      {photo ? <img src={photo} alt="" className="size-full object-cover" /> : initials(name)}
     </span>
   )
 }

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { CheckCircle2, MessageCircle, Phone, Trash2, UserPlus, XCircle } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, MessageCircle, Phone, Trash2, UserPlus, XCircle } from 'lucide-react'
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
 import { CheckboxList, FieldWrapper, controlClass } from '../../components/forms/Controls'
 import { Select } from '../../components/forms/Select'
@@ -10,10 +10,10 @@ import { Card, SectionHeader } from '../../components/ui/Card'
 import { useAuth } from '../../contexts/AuthContext'
 import { useConfirm } from '../../contexts/ConfirmContext'
 import { errorMessage, useToast } from '../../contexts/ToastContext'
-import { useRequests, useTeams } from '../../hooks/useData'
+import { useMembers, useRequests, useTeams } from '../../hooks/useData'
 import { Page } from '../../layouts/PageMeta'
 import type { MemberRequest, MemberStatus } from '../../models'
-import { requestsService } from '../../services'
+import { requestsService, sameEmail } from '../../services'
 import { ageFrom, formatDate } from '../../utils/date'
 import { MEMBER_STATUS_OPTIONS } from '../../utils/labels'
 
@@ -33,7 +33,7 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
   )
 }
 
-function Decision({ request }: { request: MemberRequest }) {
+function Decision({ request, approveBlocked }: { request: MemberRequest; approveBlocked: boolean }) {
   const toast = useToast()
   const navigate = useNavigate()
   const { user } = useAuth()
@@ -109,6 +109,7 @@ function Decision({ request }: { request: MemberRequest }) {
             <Button
               icon={CheckCircle2}
               loading={busy}
+              disabled={approveBlocked}
               onClick={() =>
                 run(() => requestsService.approve(request.id, { teamIds, status }, reviewer), `${request.fullName} agora é membro.`)
               }
@@ -131,9 +132,11 @@ export function RequestReviewPage() {
   const confirm = useConfirm()
   const { items, loading } = useRequests()
   const { items: teams } = useTeams()
+  const { items: members } = useMembers()
 
   const request = items.find((r) => r.id === id)
   if (!request) return loading ? null : <Navigate to={BACK} replace />
+  const duplicate = request.email ? members.find((m) => m.email && sameEmail(m.email, request.email)) : undefined
 
   const teamNames = request.teamIds.map((teamId) => teams.find((t) => t.id === teamId)?.name).filter(Boolean)
   const age = ageFrom(request.birthDate)
@@ -203,7 +206,25 @@ export function RequestReviewPage() {
           </dl>
         </Card>
 
-        {canDecide && <Decision request={request} />}
+        {request.status === 'pendente' && duplicate && (
+          <div role="alert" className="flex items-start gap-3 rounded-2xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
+            <AlertTriangle className="mt-0.5 size-5 shrink-0" />
+            <div className="min-w-0">
+              <p className="font-semibold">Este e-mail já está cadastrado</p>
+              <p className="wrap-anywhere">
+                {duplicate.fullName} já é membro com o e-mail {request.email}. Para não cadastrar a mesma pessoa duas vezes, recuse esta
+                solicitação (ou corrija o e-mail do cadastro existente).
+              </p>
+              {can('membros', 'edit') && (
+                <Link to={`/membros/${encodeURIComponent(duplicate.id)}/editar`} className="mt-1 inline-block font-semibold underline">
+                  Abrir o cadastro de {duplicate.fullName}
+                </Link>
+              )}
+            </div>
+          </div>
+        )}
+
+        {canDecide && <Decision request={request} approveBlocked={Boolean(duplicate)} />}
 
         {request.status !== 'pendente' && (
           <Card className="space-y-2 p-5 text-sm text-ink">

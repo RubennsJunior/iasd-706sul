@@ -46,14 +46,20 @@ const COVERS: Record<CoverKey, { background: string; icon: LucideIcon }> = {
   },
 }
 
-/** Capa ilustrada do evento, gerada em CSS para funcionar sem imagens externas. */
+/**
+ * Capa do evento: a foto escolhida no cadastro ou, sem foto, uma ilustração gerada em CSS (funciona sem imagens
+ * externas).
+ */
 export function Cover({
   cover,
+  photo,
   title,
   className,
   showTitle = true,
 }: {
   cover: CoverKey
+  /** Foto do evento (data URL); quando existe, aparece no lugar da ilustração. */
+  photo?: string
   title: string
   className?: string
   showTitle?: boolean
@@ -64,11 +70,20 @@ export function Cover({
       role="img"
       aria-label={`Capa: ${title}`}
       className={cn('isolate overflow-hidden text-white', !className?.includes('absolute') && 'relative', className)}
-      style={{ background }}
+      style={photo ? { background: '#0a1c52' } : { background }}
     >
-      <Icon className="absolute -bottom-3 -right-3 size-24 rotate-[-8deg] opacity-25" strokeWidth={1.3} />
+      {photo ? (
+        <img src={photo} alt="" className="absolute inset-0 size-full object-cover" />
+      ) : (
+        <Icon className="absolute -bottom-3 -right-3 size-24 rotate-[-8deg] opacity-25" strokeWidth={1.3} />
+      )}
       {showTitle && (
-        <span className="absolute inset-0 flex items-center p-3 break-words font-script text-[17px] font-semibold italic leading-[1.1] drop-shadow lg:text-xl">
+        <span
+          className={cn(
+            'absolute inset-0 flex p-3 break-words font-script text-[17px] font-semibold italic leading-[1.1] drop-shadow lg:text-xl',
+            photo ? 'items-end bg-linear-to-t from-navy-950/80 via-navy-950/25 to-transparent' : 'items-center',
+          )}
+        >
           {title}
         </span>
       )}

@@ -6,7 +6,7 @@ import { Banner } from '../../components/ui/Banner'
 import { Button } from '../../components/ui/Button'
 import { EmptyState, Fab, FilterMenu, SearchBar } from '../../components/ui/Misc'
 import { SegmentedTabs } from '../../components/ui/Tabs'
-import { teamIcon } from '../../components/ui/icons'
+import { TeamEmblem } from '../../components/ui/TeamEmblem'
 import { useAuth } from '../../contexts/AuthContext'
 import { useDepartments, useMemberNames, useScopedTeams } from '../../hooks/useData'
 import { Page } from '../../layouts/PageMeta'
@@ -86,17 +86,13 @@ export function TeamsPage() {
         ) : (
           <ul className="grid grid-cols-1 gap-3 lg:grid-cols-2 2xl:grid-cols-3">
             {visible.map((team) => {
-              const Icon = teamIcon(team.icon)
               return (
                 <li key={team.id}>
                   <Link
                     to={`/equipes/${team.id}`}
                     className="flex items-center gap-4 rounded-3xl bg-white p-3.5 shadow-card transition-shadow hover:shadow-float"
                   >
-                    <span className="relative grid size-[72px] shrink-0 place-items-center rounded-full bg-navy-900 text-white shadow-inner ring-4 ring-royal-50">
-                      <Icon className="size-8" strokeWidth={1.6} />
-                      <span className="absolute inset-x-3 bottom-1.5 h-0.5 rounded-full bg-gold-500" />
-                    </span>
+                    <TeamEmblem team={team} />
                     <span className="min-w-0 flex-1 space-y-0.5">
                       <span className="flex items-start justify-between gap-2">
                         <span className="text-lg font-semibold leading-tight text-navy-900">{team.name}</span>

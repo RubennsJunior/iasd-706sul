@@ -50,7 +50,7 @@ export function UsersPage() {
           sortValue: (u) => u.name,
           cell: (u) => (
             <div className="flex items-center gap-3">
-              <Avatar name={u.name} size="sm" />
+              <Avatar name={u.name} photo={u.photo} size="sm" />
               <div className="min-w-0">
                 <p className="wrap-anywhere font-medium text-navy-900">{u.name}</p>
                 <p className="wrap-anywhere text-xs text-muted">{u.email}</p>
@@ -73,7 +73,7 @@ export function UsersPage() {
         { header: 'Situação', sortValue: (u) => u.status, cell: (u) => <StatusBadge kind="user" value={u.status} /> },
       ]}
       card={(u) => ({
-        leading: <Avatar name={u.name} />,
+        leading: <Avatar name={u.name} photo={u.photo} />,
         title: u.name,
         subtitle: u.email,
         badge: <StatusBadge kind="user" value={u.status} />,

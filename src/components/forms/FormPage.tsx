@@ -236,7 +236,7 @@ export function FormPage({
       <div className="mx-auto max-w-4xl space-y-4">
       {header?.(values)}
       {tabs && tabs.length > 1 && (
-        <SegmentedTabs items={tabs} value={activeTab} onChange={setActiveTab} className="lg:max-w-md" />
+        <SegmentedTabs items={tabs} value={activeTab} onChange={setActiveTab} className={tabs.length > 3 ? undefined : 'lg:max-w-md'} />
       )}
       <Card className="p-5 sm:p-7">
         <form id={formId} onSubmit={submit} noValidate className="grid grid-cols-1 gap-4 sm:grid-cols-2">

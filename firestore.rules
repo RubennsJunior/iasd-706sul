@@ -108,15 +108,20 @@ service cloud.firestore {
 
       // ---------- pedidos de cadastro (enviados por visitantes) ----------
       match /requests/{id} {
+        // O código do pedido é "req-<e-mail>": só pode existir um pedido por e-mail. O visitante cria o pedido (e o
+        // refaz depois de recusado), mas nunca altera um que ainda está em análise ou já foi aprovado.
+        function visitorRequest() {
+          return request.resource.data.id == id
+              && request.resource.data.status == 'pendente'
+              && request.resource.data.keys().hasOnly(['id', 'fullName', 'birthDate', 'phone', 'email', 'address', 'baptized', 'baptismDate', 'teamIds', 'message', 'status', 'createdAt', 'updatedAt'])
+              && request.resource.data.fullName is string && request.resource.data.fullName.size() <= 160
+              && request.resource.data.email is string && request.resource.data.email.size() <= 160
+              && request.resource.data.message is string && request.resource.data.message.size() <= 1000
+              && request.resource.data.teamIds is list && request.resource.data.teamIds.size() <= 30;
+        }
         allow read: if can('membros', 'view');
-        // visitante só envia pedido novo "pendente", com os campos do formulário
-        allow create: if (request.resource.data.status == 'pendente'
-                          && request.resource.data.keys().hasOnly(['fullName', 'birthDate', 'phone', 'email', 'address', 'baptized', 'baptismDate', 'teamIds', 'message', 'status', 'createdAt', 'updatedAt'])
-                          && request.resource.data.fullName is string && request.resource.data.fullName.size() <= 160
-                          && request.resource.data.message is string && request.resource.data.message.size() <= 1000
-                          && request.resource.data.teamIds is list && request.resource.data.teamIds.size() <= 30)
-                      || can('membros', 'create');
-        allow update: if can('membros', 'edit');
+        allow create: if visitorRequest() || can('membros', 'create');
+        allow update: if can('membros', 'edit') || (resource.data.status == 'recusada' && visitorRequest());
         allow delete: if can('membros', 'delete');
       }
 
@@ -124,8 +129,8 @@ service cloud.firestore {
       match /events/{id} {
         allow read: if true;
         allow create: if can('eventos', 'create');
-        // participantes (módulo próprio) também alteram o evento
-        allow update: if can('eventos', 'edit') || canAny('participantes');
+        // participantes (módulo próprio) também alteram o evento; qualquer pessoa logada escolhe a sua ação (só o campo "actions")
+        allow update: if can('eventos', 'edit') || canAny('participantes') || (active() && onlyChanges(['actions']));
         allow delete: if can('eventos', 'delete');
       }
       match /rosters/{id} {

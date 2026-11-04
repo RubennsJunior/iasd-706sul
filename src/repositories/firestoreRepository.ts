@@ -21,6 +21,8 @@ import type { ResettableRepository } from './repository'
 
 /** Sem nenhuma resposta da nuvem por este tempo, o app segue com os dados locais. */
 const READY_TIMEOUT_MS = 10_000
+/** Quanto tempo um envio que exige confirmação espera pela resposta do servidor. */
+const CONFIRM_TIMEOUT_MS = 15_000
 /** Limite do Firestore é 500 operações por lote. */
 const BATCH_SIZE = 400
 
@@ -205,13 +207,16 @@ export function createFirestoreRepository<T extends Entity>(
     if (listeners.size > 0) start()
   })
 
-  /** Aplica a mudança na tela já e envia ao Firestore em seguida. */
-  const commit = (id: ID, value: T | null, send: () => Promise<unknown>) => {
+  /**
+   * Aplica a mudança na tela já e envia ao Firestore em seguida. Devolve o resultado do envio para quem quiser esperar
+   * pela confirmação do servidor; quem não espera não precisa tratar o erro (ele já é avisado nas telas).
+   */
+  const commit = (id: ID, value: T | null, send: () => Promise<unknown>, report = true): Promise<void> => {
     const mine = ++version
     overlay.set(id, { value, version: mine, acked: false })
     rebuild()
     emit()
-    send().then(
+    const sent = send().then(
       () => {
         const op = overlay.get(id)
         if (op?.version === mine) op.acked = true
@@ -222,10 +227,20 @@ export function createFirestoreRepository<T extends Entity>(
           rebuild()
           emit()
         }
-        reportWriteError(error)
+        if (report) reportWriteError(error)
+        throw error
       },
     )
+    sent.catch(() => undefined)
+    return sent
   }
+
+  /** Espera o servidor responder ao envio; se demorar demais, avisa sem desfazer (o envio segue na fila do Firestore). */
+  const awaitServer = (sent: Promise<void>) =>
+    new Promise<void>((resolve, reject) => {
+      const timer = setTimeout(() => reject(Object.assign(new Error('Sem resposta da nuvem.'), { code: 'timeout' })), CONFIRM_TIMEOUT_MS)
+      sent.then(resolve, reject).finally(() => clearTimeout(timer))
+    })
 
   const prepare = async <D extends Partial<T>>(data: D): Promise<D> => ((await options.prepare?.(data)) ?? data) as D
 
@@ -258,10 +273,14 @@ export function createFirestoreRepository<T extends Entity>(
       await ready
       return isLocal() ? local.get(id) : current.find((item) => item.id === id)
     },
-    async create(data) {
+    async create(data, createOptions) {
       start()
       await ready
       if (isLocal()) {
+        // um envio que precisa chegar ao servidor nunca fica só neste aparelho (a secretaria não o veria)
+        if (createOptions?.confirm) {
+          throw Object.assign(new Error('Sem conexão com a nuvem. Verifique a internet e tente novamente.'), { code: 'unavailable' })
+        }
         localWrites = true
         return local.create(data)
       }
@@ -269,7 +288,8 @@ export function createFirestoreRepository<T extends Entity>(
       if (current.some((item) => item.id === id)) throw new Error('Já existe um registro com este código.')
       const stamp = now()
       const item = { ...(await prepare(data as Partial<T>)), id, createdAt: stamp, updatedAt: stamp } as T
-      commit(id, item, () => setDoc(docRef(id), item))
+      const sent = commit(id, item, () => setDoc(docRef(id), item), !createOptions?.confirm)
+      if (createOptions?.confirm) await awaitServer(sent)
       return item
     },
     async update(id, patch) {

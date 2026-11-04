@@ -4,6 +4,7 @@ import { useSearchParams } from 'react-router-dom'
 import { PermissionMatrixEditor } from '../../components/admin/PermissionMatrixEditor'
 import { Switch } from '../../components/forms/Controls'
 import { FormPage } from '../../components/forms/FormPage'
+import { PhotoField } from '../../components/forms/PhotoField'
 import type { FormTab } from '../../components/forms/FormPage'
 import { Select } from '../../components/forms/Select'
 import type { FieldDef, Values } from '../../components/forms/types'
@@ -21,6 +22,7 @@ import { normalizeMatrix } from '../../models/permissions'
 import type { AppUser, NewEntity, PermissionMatrix, Role, UserStatus } from '../../models'
 import { ensureMemberForUser, membersService, usersService, validateUser } from '../../services'
 import { formatDate, todayISO } from '../../utils/date'
+import { PHOTO_PRESETS } from '../../utils/image'
 import { USER_STATUS_OPTIONS } from '../../utils/labels'
 
 const ADMIN_ROLE = 'role-admin'
@@ -39,7 +41,7 @@ function UserSummary({ item, values, role }: { item?: AppUser; values: Values; r
   const name = String(values.name ?? '').trim()
   return (
     <Card className="flex flex-wrap items-center gap-4 p-4 sm:p-5">
-      <Avatar name={name || 'Novo usuário'} size="lg" />
+      <Avatar name={name || 'Novo usuário'} photo={values.photo || undefined} size="lg" />
       {/* largura mínima própria: em tela estreita os dados de acesso quebram para baixo em vez de espremer o nome */}
       <div className="min-w-0 grow basis-44">
         <p className="wrap-anywhere text-lg font-semibold text-navy-900">{name || 'Novo usuário'}</p>
@@ -202,6 +204,22 @@ export function UserFormPage({ item, backTo }: { item?: AppUser; backTo: string 
           />
         ),
       },
+      {
+        name: 'photo',
+        label: 'Foto do usuário',
+        type: 'custom',
+        tab: 'dados',
+        section: 'Informações pessoais',
+        render: ({ value, onChange, values }) => (
+          <PhotoField
+            value={value as string | undefined}
+            onChange={onChange}
+            options={PHOTO_PRESETS.avatar}
+            label="foto"
+            fallback={<Avatar name={String(values.name ?? '').trim() || 'Novo usuário'} size="xl" />}
+          />
+        ),
+      },
       { name: 'name', label: 'Nome completo', type: 'text', required: true, span: 2, tab: 'dados', section: 'Informações pessoais' },
       {
         name: 'email',
@@ -308,6 +326,7 @@ export function UserFormPage({ item, backTo }: { item?: AppUser; backTo: string 
       }
     : {
         memberId: '',
+        photo: undefined,
         name: '',
         email: '',
         phone: '',
@@ -328,6 +347,7 @@ export function UserFormPage({ item, backTo }: { item?: AppUser; backTo: string 
       email: String(values.email).trim(),
       phone: String(values.phone ?? '').trim(),
       birthDate: values.birthDate || undefined,
+      photo: (values.photo as string) || undefined,
       notes: String(values.notes ?? '').trim() || undefined,
       roleId: values.roleId as string,
       status: values.status as UserStatus,

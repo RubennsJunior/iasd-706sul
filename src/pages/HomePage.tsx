@@ -207,7 +207,7 @@ export function HomePage() {
 
           {nextEvent ? (
             <section className="relative isolate min-h-[210px] overflow-hidden rounded-3xl p-5 text-white shadow-card">
-              <Cover cover={nextEvent.cover} title={nextEvent.title} showTitle={false} className="absolute inset-0 -z-20" />
+              <Cover cover={nextEvent.cover} photo={nextEvent.photo} title={nextEvent.title} showTitle={false} className="absolute inset-0 -z-20" />
               <div className="absolute inset-0 -z-10 bg-linear-to-r/srgb from-navy-950/95 via-navy-950/70 to-navy-950/10" />
               <p className="flex items-center gap-2.5 font-semibold text-white/95">
                 <CalendarClock className="size-7 text-gold-400" strokeWidth={1.6} />

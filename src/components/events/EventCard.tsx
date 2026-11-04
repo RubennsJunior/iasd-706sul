@@ -12,7 +12,7 @@ export function EventCard({ event }: { event: ChurchEvent }) {
       to={`/eventos/${event.id}`}
       className="flex items-center gap-3.5 rounded-3xl bg-white p-3 shadow-card transition-shadow hover:shadow-float"
     >
-      <Cover cover={event.cover} title={event.title} className="size-28 shrink-0 rounded-2xl sm:size-32" />
+      <Cover cover={event.cover} photo={event.photo} title={event.title} className="size-28 shrink-0 rounded-2xl sm:size-32" />
       <div className="min-w-0 flex-1 space-y-1">
         <StatusBadge kind="event" value={eventPhase(event)} />
         <h3 className="wrap-anywhere text-lg font-semibold leading-tight text-navy-900">{event.title}</h3>

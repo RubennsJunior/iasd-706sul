@@ -52,11 +52,24 @@ dados fictícios. Para esconder a lista de contas e o "Testar outro perfil" (ant
   próprio nome. O cadastro público cria uma **solicitação de membro** (não um usuário), com **e-mail obrigatório** e
   escolha das equipes de interesse; a secretaria e a liderança analisam em **Cadastros → Solicitações de Cadastro**:
   aprovar cria o membro e o coloca nas equipes confirmadas, recusar exige o motivo. Pedidos novos geram notificação e
-  aviso no Início.
+  aviso no Início. **O e-mail não se repete**: o código da solicitação é `req-<e-mail>`, então o banco só aceita um pedido
+  por e-mail (quem foi recusado pode reenviar); e-mail de quem já é membro é barrado, e na análise aparece o aviso com o
+  cadastro existente (o botão de aprovar fica bloqueado). O envio só termina quando o servidor confirma — se não houver
+  conexão com a nuvem o pedido **não** fica guardado só no aparelho: a pessoa vê o erro e tenta de novo. Membros e usuários
+  também não aceitam e-mail repetido (maiúsculas e minúsculas contam como o mesmo).
 - **Início** — indicadores, próximo evento, minha semana, ações rápidas, minha próxima escala (com confirmação),
   próximos cultos, escalas da igreja e atividades recentes.
 - **Eventos** — filtros (todos, próximos, este mês, realizados, cancelados), busca, cadastro/edição/exclusão,
-  detalhes com participantes e escalas vinculadas.
+  detalhes com participantes e escalas vinculadas. O cadastro do evento tem **foto** e as abas **Cronograma** (horários e
+  responsáveis, ordenados por horário), **Liturgia** (ordem do culto: hino, oração, leitura, mensagem…, com setas para
+  reorganizar), **Dinâmicas** (duração, materiais e quem conduz) e **Ações**. As ações são tarefas para as pessoas
+  escolherem na página do evento (levar um prato, recepção, som…): cada pessoa toca em **Quero fazer** / **Sair desta
+  ação**, com limite opcional de vagas; quem edita eventos também adiciona ou tira pessoas. As escolhas se encerram com
+  o evento cancelado, realizado ou passado, e qualquer pessoa logada altera só o campo `actions` do evento.
+- **Fotos** — usuários (Cadastro de Usuários), equipes e eventos aceitam foto: a imagem é reduzida e comprimida no próprio
+  aparelho (`src/utils/image.ts`: pessoa 320 px/40 KB, equipe 480 px/70 KB, evento 960×540/130 KB) e guardada como texto
+  no cadastro, sem serviço de arquivos à parte e sem custo extra. Sem foto aparecem as iniciais, o ícone da equipe e a capa
+  ilustrada.
 - **Equipes** — lista, "minhas equipes", liderança, detalhes com integrantes (adicionar/remover) e próximas escalas.
 - **Liturgia** — leitura do dia, calendário de leituras, hinário e favoritos, orações e pedidos de oração,
   mensagens e reflexões, Escola Sabatina e programação dos cultos.
@@ -154,7 +167,11 @@ Enquanto as regras antigas (abertas) seguirem publicadas, o sistema funciona, ma
 lê e grava os dados**. Depois de publicar as novas regras, quem não tem acesso a uma coleção vê a lista vazia e o servidor
 recusa gravações sem permissão (a tela avisa).
 
-**Testes das regras** (emulador do Firestore, precisa de Java 21): `cd tests/rules && npm install && npm test` — 52 testes
+**Atenção:** o pedido de cadastro do visitante só chega à secretaria com a versão atual de `firestore.rules` — as regras
+antigas recusavam o documento que o aplicativo grava (ele leva o próprio `id`). Se o visitante envia o cadastro e nada
+aparece em *Solicitações de Cadastro*, publique as regras de novo.
+
+**Testes das regras** (emulador do Firestore, precisa de Java 21): `cd tests/rules && npm install && npm test` — 56 testes
 cobrem visitante, Membro, Líder de Equipe, Secretaria, Administrador, usuário inativo, permissões personalizadas, o Patrimônio e o
 primeiro acesso do administrador. Para abrir o app contra os emuladores (Firestore e Authentication) em vez do projeto real,
 use `VITE_FIREBASE_EMULATOR=1` e `VITE_FIREBASE_PROJECT_ID=demo-igreja` (em `.env.local`) e `firebase emulators:start`.

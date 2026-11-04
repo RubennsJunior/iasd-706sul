@@ -69,6 +69,8 @@ before(async () => {
     await put(['settings', 'settings-1'], { showSplash: true })
     await put(['contacts', 'ct-1'], { label: 'x' })
     await put(['requests', 'req-1'], { fullName: 'Fulano de Tal', status: 'pendente' })
+    await put(['requests', 'req-aprovada@x.com'], { id: 'req-aprovada@x.com', fullName: 'Ja Aprovada', email: 'aprovada@x.com', status: 'aprovada', memberId: 'mem-01' })
+    await put(['requests', 'req-recusada@x.com'], { id: 'req-recusada@x.com', fullName: 'Ja Recusada', email: 'recusada@x.com', status: 'recusada', reason: 'x', reviewedBy: 'Fernanda' })
     await put(['notifications', 'n-1'], { title: 'Aviso', body: 'x', kind: 'aviso', readBy: [] })
     await put(['hymns', 'h-1'], { number: 1, title: 'Hino', favoriteBy: [] })
     await put(['prayers', 'p-1'], { title: 'Oração', prayedBy: [], status: 'aberto' })
@@ -102,12 +104,27 @@ describe('visitante (sem login)', () => {
     await assertFails(setDoc(ref(visitor(), ['members', 'x']), { fullName: 'x' }))
     await assertFails(deleteDoc(ref(visitor(), ['events', 'ev-1'])))
   })
-  const pedido = { fullName: 'Maria Souza', birthDate: '', phone: '(11) 9', email: '', address: '', baptized: false, baptismDate: '', teamIds: ['team-1'], message: 'oi', status: 'pendente' }
-  it('envia um pedido de cadastro pendente', () => assertSucceeds(setDoc(ref(visitor(), ['requests', 'req-novo']), pedido)))
+  // Exatamente o que o aplicativo grava: o código do documento é "req-<e-mail>" e o documento leva o próprio id e as datas.
+  const pedidoDe = (email, extra = {}) => ({ id: `req-${email}`, fullName: 'Maria Souza', birthDate: '', phone: '(11) 9', email, address: '', baptized: false, baptismDate: '', teamIds: ['team-1'], message: 'oi', status: 'pendente', createdAt: '2026-11-04T00:00:00.000Z', updatedAt: '2026-11-04T00:00:00.000Z', ...extra })
+  const pedido = pedidoDe('maria@x.com')
+  it('envia um pedido de cadastro pendente, do jeito que o aplicativo grava', () => assertSucceeds(setDoc(ref(visitor(), ['requests', pedido.id]), pedido)))
+  it('NÃO envia pedido com id diferente do código do documento', () => assertFails(setDoc(ref(visitor(), ['requests', 'req-outro@x.com']), pedidoDe('maria2@x.com'))))
   it('NÃO envia pedido já aprovado, com campo extra ou nome gigante', async () => {
-    await assertFails(setDoc(ref(visitor(), ['requests', 'r2']), { ...pedido, status: 'aprovada' }))
-    await assertFails(setDoc(ref(visitor(), ['requests', 'r3']), { ...pedido, memberId: 'mem-01' }))
-    await assertFails(setDoc(ref(visitor(), ['requests', 'r4']), { ...pedido, fullName: 'x'.repeat(500) }))
+    await assertFails(setDoc(ref(visitor(), ['requests', 'req-r2@x.com']), pedidoDe('r2@x.com', { status: 'aprovada' })))
+    await assertFails(setDoc(ref(visitor(), ['requests', 'req-r3@x.com']), pedidoDe('r3@x.com', { memberId: 'mem-01' })))
+    await assertFails(setDoc(ref(visitor(), ['requests', 'req-r4@x.com']), pedidoDe('r4@x.com', { fullName: 'x'.repeat(500) })))
+  })
+  it('um e-mail só tem um pedido: não sobrescreve o que está em análise nem o aprovado', async () => {
+    await assertSucceeds(setDoc(ref(visitor(), ['requests', 'req-dup@x.com']), pedidoDe('dup@x.com')))
+    await assertFails(setDoc(ref(visitor(), ['requests', 'req-dup@x.com']), pedidoDe('dup@x.com', { fullName: 'Outra Pessoa' })))
+    await assertFails(setDoc(ref(visitor(), ['requests', 'req-aprovada@x.com']), pedidoDe('aprovada@x.com')))
+    await assertFails(updateDoc(ref(visitor(), ['requests', 'req-dup@x.com']), { message: 'mudei' }))
+  })
+  it('quem foi recusado reenvia o pedido, mas não reabre nem aprova por conta própria', async () => {
+    await assertFails(updateDoc(ref(visitor(), ['requests', 'req-recusada@x.com']), { status: 'pendente' }))
+    await assertFails(setDoc(ref(visitor(), ['requests', 'req-recusada@x.com']), pedidoDe('recusada@x.com', { status: 'aprovada' })))
+    await assertFails(setDoc(ref(visitor(), ['requests', 'req-recusada@x.com']), pedidoDe('recusada@x.com', { reviewedBy: 'eu' })))
+    await assertSucceeds(setDoc(ref(visitor(), ['requests', 'req-recusada@x.com']), pedidoDe('recusada@x.com', { message: 'corrigi' })))
   })
   it('NÃO edita nem apaga pedidos', async () => {
     await assertFails(updateDoc(ref(visitor(), ['requests', 'req-1']), { status: 'aprovada' }))
@@ -140,9 +157,16 @@ describe('perfil Membro', () => {
   it('NÃO cria nem altera cadastros da igreja', async () => {
     await assertFails(setDoc(ref(db(), ['events', 'ev-x']), { title: 'x' }))
     await assertFails(updateDoc(ref(db(), ['events', 'ev-1']), { title: 'x' }))
+    await assertFails(updateDoc(ref(db(), ['events', 'ev-1']), { title: 'x', actions: [] }))
     await assertFails(setDoc(ref(db(), ['members', 'mem-x']), { fullName: 'x' }))
     await assertFails(updateDoc(ref(db(), ['teams', 'team-1']), { name: 'x' }))
     await assertFails(updateDoc(ref(db(), ['settings', 'settings-1']), { showSplash: false }))
+  })
+  it('escolhe a própria ação do evento (só o campo actions), mas não muda mais nada nele', async () => {
+    await assertSucceeds(updateDoc(ref(db(), ['events', 'ev-1']), { actions: [{ id: 'a1', title: 'Som', memberIds: ['mem-10'] }], updatedAt: 'agora' }))
+    await assertFails(updateDoc(ref(db(), ['events', 'ev-1']), { description: 'hack' }))
+    await assertFails(updateDoc(ref(as('u-off'), ['events', 'ev-1']), { actions: [] }))
+    await assertFails(updateDoc(ref(visitor(), ['events', 'ev-1']), { actions: [] }))
   })
   it('confirma a própria escala, mas não muda o resto dela', async () => {
     await assertSucceeds(updateDoc(ref(db(), ['rosters', 'r-1']), { assignments: [{ memberId: 'mem-10', role: 'x', status: 'confirmado' }], updatedAt: 'agora' }))

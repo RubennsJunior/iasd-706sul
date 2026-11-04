@@ -11,6 +11,7 @@ import { repos } from '../repositories'
 import { addDays, compareDateTime, diffInDays, monthKey, todayISO } from '../utils/date'
 import { matchesQuery } from '../utils/misc'
 import { createCrudService } from './crud'
+import { acceptsActions, applyActionChoice } from './eventPlan'
 import { assertScope } from './scope'
 import { notify } from './system'
 
@@ -90,6 +91,18 @@ export const eventsService = {
     return repos.events.update(eventId, {
       participants: event.participants.filter((p) => p.memberId !== memberId),
     })
+  },
+
+  /**
+   * Uma pessoa escolhe (ou larga) uma das ações do evento. Grava direto no repositório, sem passar pelo cadastro do
+   * evento: só o campo `actions` muda — é o que as regras permitem a qualquer pessoa logada — e não entra no feed
+   * de atividades a cada escolha.
+   */
+  async chooseAction(eventId: ID, actionId: ID, memberId: ID, take: boolean) {
+    const event = await repos.events.get(eventId)
+    if (!event) throw new Error('Evento não encontrado.')
+    if (take && !acceptsActions(event, todayISO())) throw new Error('Este evento não aceita mais escolhas de ações.')
+    return repos.events.update(eventId, { actions: applyActionChoice(event.actions ?? [], actionId, memberId, take) })
   },
 }
 

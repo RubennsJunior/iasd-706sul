@@ -69,6 +69,8 @@ export interface AppUser extends Entity {
   /** Quando definido, vale no lugar das permissões do perfil. */
   customPermissions?: PermissionMatrix
   lastLoginAt?: string
+  /** Foto do usuário (imagem reduzida, guardada como texto); sem ela aparecem as iniciais. */
+  photo?: string
   /** Vínculo interno com o cadastro de membro (definido nos dados de exemplo); sem ele o membro é reconhecido por e-mail ou nome. */
   memberId?: ID
 }
@@ -122,6 +124,8 @@ export interface Team extends Entity {
   foundedAt: string
   status: ActiveStatus
   icon: string
+  /** Foto da equipe (imagem reduzida, guardada como texto); sem ela vale o ícone. */
+  photo?: string
 }
 
 export interface Position extends Entity {
@@ -150,6 +154,46 @@ export interface EventParticipant {
   status: ParticipantStatus
 }
 
+/** Momento do cronograma do evento (o que acontece em cada horário). */
+export interface EventScheduleItem {
+  id: ID
+  time: string
+  title: string
+  responsibleId?: ID
+  notes?: string
+}
+
+/** Item da liturgia do evento, na ordem em que acontece (hino, oração, leitura, mensagem…). */
+export interface EventLiturgyItem {
+  id: ID
+  kind: string
+  title: string
+  details?: string
+  responsibleId?: ID
+}
+
+/** Dinâmica ou atividade do evento (quebra-gelo, brincadeira, jogo…). */
+export interface EventDynamic {
+  id: ID
+  title: string
+  description?: string
+  /** Duração em minutos. */
+  minutes?: number
+  materials?: string
+  responsibleId?: ID
+}
+
+/** Ação do evento que as pessoas escolhem para fazer (levar algo, recepcionar, ajudar no som…). */
+export interface EventAction {
+  id: ID
+  title: string
+  description?: string
+  /** Quantas pessoas a ação comporta; sem valor, não há limite. */
+  slots?: number
+  /** Membros que escolheram esta ação. */
+  memberIds: ID[]
+}
+
 export interface ChurchEvent extends Entity {
   title: string
   description: string
@@ -160,6 +204,13 @@ export interface ChurchEvent extends Entity {
   participants: EventParticipant[]
   status: EventStatus
   cover: CoverKey
+  /** Foto do evento (imagem reduzida, guardada como texto); quando existe, aparece no lugar da capa ilustrada. */
+  photo?: string
+  /** Cronograma, liturgia, dinâmicas e ações: gravados antes destes campos existirem, ficam vazios. */
+  schedule?: EventScheduleItem[]
+  liturgy?: EventLiturgyItem[]
+  dynamics?: EventDynamic[]
+  actions?: EventAction[]
 }
 
 export interface ProgramItem {

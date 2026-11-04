@@ -1,5 +1,5 @@
 import type { Entity, NewEntity } from '../models'
-import type { Repository } from '../repositories/repository'
+import type { CreateOptions, Repository } from '../repositories/repository'
 import { logActivity } from './activity'
 
 export interface CrudService<T extends Entity> {
@@ -8,7 +8,7 @@ export interface CrudService<T extends Entity> {
   nameOf(item: T): string
   list(): Promise<T[]>
   get(id: string): Promise<T | undefined>
-  create(data: NewEntity<T>): Promise<T>
+  create(data: NewEntity<T>, options?: CreateOptions): Promise<T>
   update(id: string, patch: Partial<NewEntity<T>>): Promise<T>
   remove(id: string): Promise<void>
 }
@@ -46,10 +46,10 @@ export function createCrudService<T extends Entity>(
     nameOf,
     list: () => repo.list(),
     get: (id) => repo.get(id),
-    async create(data) {
+    async create(data, createOptions) {
       options.authorize?.('create', data as Partial<T>)
       await options.validate?.(data)
-      const created = await repo.create(data)
+      const created = await repo.create(data, createOptions)
       await options.afterSave?.(created)
       await note(created, `cadastrad${suffix}`)
       return created

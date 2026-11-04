@@ -157,3 +157,16 @@ export const ASSET_CATEGORY: Record<AssetCategory, string> = {
   outro: 'Outro',
 }
 export const ASSET_CATEGORY_OPTIONS = options(ASSET_CATEGORY)
+
+/** Tipos de item da liturgia de um evento. */
+export const LITURGY_KINDS = [
+  'Hino',
+  'Oração',
+  'Leitura bíblica',
+  'Mensagem',
+  'Música especial',
+  'Ofertório',
+  'Avisos',
+  'Bênção final',
+  'Outro',
+].map((value) => ({ value, label: value }))

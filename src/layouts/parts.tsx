@@ -67,7 +67,7 @@ export function AccountButton({ showName, className }: { showName?: boolean; cla
         aria-label="Abrir minha conta"
         className={cn('flex items-center gap-3 rounded-full text-left', className)}
       >
-        <Avatar name={user.name} size={showName ? 'md' : 'lg'} ring={!showName} />
+        <Avatar name={user.name} photo={user.photo} size={showName ? 'md' : 'lg'} ring={!showName} />
         {showName && (
           <span className="hidden whitespace-nowrap leading-tight xl:block">
             <span className="block text-sm font-semibold text-navy-900">{user.name}</span>
@@ -77,7 +77,7 @@ export function AccountButton({ showName, className }: { showName?: boolean; cla
       </button>
       <Modal open={open} onClose={() => setOpen(false)} title="Minha conta" size="sm">
         <div className="flex items-center gap-3">
-          <Avatar name={user.name} size="lg" />
+          <Avatar name={user.name} photo={user.photo} size="lg" />
           <div className="min-w-0">
             <p className="wrap-anywhere font-semibold text-navy-900">{user.name}</p>
             <p className="wrap-anywhere text-sm text-muted">{user.email}</p>
@@ -105,7 +105,7 @@ export function AccountButton({ showName, className }: { showName?: boolean; cla
                       }}
                       className="flex w-full items-center gap-3 rounded-2xl px-3 py-2 text-left hover:bg-royal-50 disabled:bg-royal-50/60"
                     >
-                      <Avatar name={u.name} size="sm" />
+                      <Avatar name={u.name} photo={u.photo} size="sm" />
                       <span className="min-w-0 flex-1">
                         <span className="block wrap-anywhere text-sm font-medium text-ink">{u.name}</span>
                         <span className="block text-xs text-muted">{roles.find((r) => r.id === u.roleId)?.name}</span>
