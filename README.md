@@ -11,9 +11,10 @@ liturgia e controle de acesso. Um único código gera três formatos:
 
 > **Etapa atual: nuvem com login (Firebase), ainda com dados fictícios.** O acesso é pelo Firebase Authentication
 > (e-mail e senha) e os cadastros ficam no Firestore, sincronizados entre aparelhos; se a nuvem não puder ser acessada,
-> o sistema cai sozinho para o `localStorage` e avisa na tela (veja [Firebase](#firebase)). Os nomes e dados são inventados; o nome exibido (provisório: **IASD 706 Sul**) fica em
-> `src/config.ts`; o logotipo é uma marca simplificada — troque pelo oficial em
-> `src/components/ui/Logo.tsx` e `public/icons/icon.svg` (depois rode `npm run icons`).
+> o sistema cai sozinho para o `localStorage` e avisa na tela (veja [Firebase](#firebase)). Os nomes e dados são inventados; o nome da igreja exibido nos cabeçalhos (provisório: **IASD 706 Sul**) e o nome do
+> aplicativo (**IASD**, no ícone do celular, na instalação do PWA e na aba do navegador) ficam em `src/config.ts`. O
+> logotipo é o símbolo da IASD, a partir da imagem `assets/logo-iasd.jpg` — para trocá-lo, substitua essa imagem e rode
+> `npm run icons`.
 
 ## Como rodar
 
@@ -215,7 +216,9 @@ atualizar o app já instalado. Instalar no aparelho: `adb install -r apk/iasd-<v
 outra assinatura, como o APK de teste, precisa ser desinstalado antes).
 
 Antes de publicar em loja: troque `appId` em `capacitor.config.ts` (e `applicationId` em `android/app/build.gradle`) pelo
-definitivo. Para regerar ícone e splash depois de trocar o logotipo: `npm run icons` e `npx @capacitor/assets generate --android`.
+definitivo. Para regerar todos os ícones (PWA, aplicativo, ícone e abertura do Android) depois de trocar a imagem do logotipo:
+`npm run icons`; o `npm run build:apk` já leva os ícones novos para o APK. O nome do aplicativo no Android é
+`appName` em `capacitor.config.ts` e `app_name` em `android/app/src/main/res/values/strings.xml`.
 
 ## Limitações conhecidas desta etapa
 

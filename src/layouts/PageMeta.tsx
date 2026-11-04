@@ -1,7 +1,7 @@
 import { createContext, useContext, useLayoutEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import type { LucideIcon } from 'lucide-react'
-import { CHURCH_NAME } from '../config'
+import { APP_NAME } from '../config'
 
 export interface PageMetaValue {
   title: string
@@ -35,7 +35,7 @@ export function Page({ title, subtitle, icon, back, variant, children }: PageMet
   const setMeta = ctx?.setMeta
   useLayoutEffect(() => {
     setMeta?.({ title, subtitle, icon, back, variant })
-    document.title = title ? `${title} • ${CHURCH_NAME}` : CHURCH_NAME
+    document.title = title ? `${title} • ${APP_NAME}` : APP_NAME
   }, [setMeta, title, subtitle, icon, back, variant])
   return <>{children}</>
 }

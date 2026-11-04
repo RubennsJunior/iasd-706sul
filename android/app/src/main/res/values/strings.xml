@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">IASD 706 Sul</string>
-    <string name="title_activity_main">IASD 706 Sul</string>
+    <string name="app_name">IASD</string>
+    <string name="title_activity_main">IASD</string>
     <string name="package_name">br.com.igrejasda.app</string>
     <string name="custom_url_scheme">br.com.igrejasda.app</string>
 </resources>

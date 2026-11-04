@@ -3,7 +3,8 @@ import { cloudEnabled } from './lib/firebase'
 /** Nome exibido no sistema. Provisório: para voltar ao nome completo, altere somente aqui (e no manifest/index.html). */
 export const CHURCH_NAME = 'IASD 706 Sul'
 
-export const APP_NAME = CHURCH_NAME
+/** Nome do aplicativo (ícone do celular, instalação do PWA, aba do navegador): só a sigla. */
+export const APP_NAME = 'IASD'
 export const APP_VERSION = '1.0.3'
 export const APP_BUILD = 'Etapa 3 — nuvem com login (Firebase)'
 

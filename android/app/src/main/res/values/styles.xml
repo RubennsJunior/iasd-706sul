@@ -20,7 +20,7 @@
         <item name="android:background">@drawable/splash</item>
         <!-- Android 12+: abertura azul-marinho com o logotipo, em vez do fundo do tema do sistema -->
         <item name="windowSplashScreenBackground">#0A2468</item>
-        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher_foreground</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_logo</item>
         <item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>
     </style>
 </resources>
